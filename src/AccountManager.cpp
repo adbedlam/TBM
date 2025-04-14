@@ -4,7 +4,7 @@ void AccountManager::runing() {
     while (run) {
         try {
             update_balance();
-            std::this_thread::sleep_for(std::chrono::seconds(15));
+            std::this_thread::sleep_for(std::chrono::seconds(10));
         } catch (const std::exception &e) {
             std::cerr << "Fail: " << e.what() << endl;
         }
@@ -25,12 +25,11 @@ void AccountManager::update_balance() {
         }
 
         balance.swap(new_balance);
-
-        std::cout << "Current balance: \n" << "BTC: " << get_balance("BTC") << " | USDT: "
-                << get_balance("USDT") << "\n\n";
     } catch (const std::exception &e) {
         std::cerr << "Fail to update balance: " << e.what() << endl;
     }
+    std::cout << "Current balance: \n" << "BTC: " << get_balance("BTC") << " | USDT: "
+            << get_balance("USDT") << "\n\n";
 }
 
 
@@ -81,7 +80,7 @@ double AccountManager::get_profit() {
 }
 
 void AccountManager::on_order_executed(const json &order_response) {
-    std::lock_guard<std::mutex> lock(mutex_);
+    // std::lock_guard<std::mutex> lock(mutex_);
     process_order(order_response);
     update_balance();
 }

@@ -34,7 +34,7 @@ x86/
 out/
 
 .env
-.csv
+*.csv
 .vs/
 .vscode/
 .idea/
