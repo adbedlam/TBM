@@ -27,7 +27,7 @@ private:
 
     int64_t BinanceAPIc::get_server_time();
 
-
+    //Время на компе
     int64_t get_current_timestamp_ms();
 
 public:
