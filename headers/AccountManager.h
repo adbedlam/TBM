@@ -1,4 +1,3 @@
-
 #ifndef ACCOUNTMANAGER_H
 #define ACCOUNTMANAGER_H
 #include "common.hpp"
@@ -17,9 +16,10 @@ using std::atomic;
 
 class AccountManager {
 private:
-    BinanceAPIc& Api;
-
-    unordered_map<string, double> balance;
+    BinanceAPIc &Api;
+    unordered_map<string, double> balance; // Общий баланс (free + locked)
+    unordered_map<string, double> free_balance; // Только свободные средства
+    unordered_map<string, double> locked_balance; // Заблокированные средства
     mutable mutex mutex_;
     thread stram_t;
 
@@ -28,23 +28,25 @@ private:
 
     void runing();
 
-    void update_balance() ;
+    void update_balance();
 
-    void process_order(const json& order);
+    void process_order(const json &order);
 
 public:
-
-    AccountManager(BinanceAPIc& api)
-       : Api(api), run(false), profit(0.0) {}
+    AccountManager(BinanceAPIc &api)
+        : Api(api), run(false), profit(0.0) {
+    }
 
     void start();
 
     void stop();
 
-    double get_balance(const std::string& asset);
+    double get_balance(const std::string &asset);
 
+    double get_free_balance(const string &asset); // Получить свободные средства
+    double get_locked_balance(const string &asset); // Получить заблокированные средства
     double get_profit();
 
-    void on_order_executed(const json& order_response);
+    void on_order_executed(const json &order_response);
 };
 #endif //ACCOUNTMANAGER_H
