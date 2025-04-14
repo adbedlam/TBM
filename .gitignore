@@ -33,7 +33,7 @@ x64/
 x86/
 out/
 
-
+.csv
 .vs/
 .vscode/
 .idea/
