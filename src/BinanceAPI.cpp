@@ -101,6 +101,7 @@ json BinanceAPIc::http_request(const string &method, const string &endpoint, con
 
     stream.shutdown(ec);
 
+
     return json::parse(res.body());
 }
 

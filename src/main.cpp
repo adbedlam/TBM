@@ -132,6 +132,8 @@ int main() {
             cout << "=== Status ===\n"
                     << "Total profit: " << acc_manager.get_profit() << " USDT\n"
                     << "Active orders: " << order_manager.queue_size() << "\n\n";
+            cout << "Current balance: \n" << "BTC: " << acc_manager.get_balance("BTC") << " | USDT: "
+                      << acc_manager.get_balance("USDT") << "\n\n";
             std::this_thread::sleep_for(2s);
         }
     });
