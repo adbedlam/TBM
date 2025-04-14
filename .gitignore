@@ -33,6 +33,7 @@ x64/
 x86/
 out/
 
+.env
 .csv
 .vs/
 .vscode/
