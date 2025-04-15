@@ -3,16 +3,16 @@
 
 DataEMA_RSI_BB::DataEMA_RSI_BB(int ema_short, int ema_long, int rsi,
                                int bb, double bb_dev,
-                               double overbought, double oversold) :
-        ema_short_window_(ema_short),
-        ema_long_window_(ema_long),
-        rsi_window_(rsi),
-        bb_window_(bb),
-        bb_std_dev_(bb_dev),
-        overbought_level_(overbought),
-        oversold_level_(oversold) {}
+                               double overbought, double oversold) : ema_short_window_(ema_short),
+                                                                     ema_long_window_(ema_long),
+                                                                     rsi_window_(rsi),
+                                                                     bb_window_(bb),
+                                                                     bb_std_dev_(bb_dev),
+                                                                     overbought_level_(overbought),
+                                                                     oversold_level_(oversold) {
+}
 
-void DataEMA_RSI_BB::update(DataCSV& data) {
+void DataEMA_RSI_BB::update(DataCSV &data) {
     history_price_.push_back(data.price);
     const int max_length = std::max({ema_long_window_ * 2, rsi_window_ * 2, bb_window_ * 2});
     if (history_price_.size() > max_length) {
@@ -21,11 +21,10 @@ void DataEMA_RSI_BB::update(DataCSV& data) {
     check_signal(data);
 }
 
-void DataEMA_RSI_BB::check_signal(const DataCSV& data) {
+void DataEMA_RSI_BB::check_signal(const DataCSV &data) {
     if (this->should_buy() && this->trade_callback) {
         this->trade_callback("BUY", data.price);
-    }
-    else if (this->should_sell() && this->trade_callback) {
+    } else if (this->should_sell() && this->trade_callback) {
         this->trade_callback("SELL", data.price);
     }
 }
@@ -46,10 +45,10 @@ double DataEMA_RSI_BB::calculate_ema(int window) {
 double DataEMA_RSI_BB::calculate_rsi() {
     if (history_price_.size() <= rsi_window_) return 50.0;
 
-    std::vector<double> gains, losses;
+    std::deque<double> gains, losses;
 
     for (size_t i = history_price_.size() - rsi_window_; i < history_price_.size() - 1; ++i) {
-        double change = history_price_[i+1] - history_price_[i];
+        double change = history_price_[i + 1] - history_price_[i];
         if (change > 0) {
             gains.push_back(change);
             losses.push_back(0.0);
@@ -57,6 +56,8 @@ double DataEMA_RSI_BB::calculate_rsi() {
             gains.push_back(0.0);
             losses.push_back(-change);
         }
+        gains.pop_front();
+        losses.pop_front();
     }
 
     double avg_gain = std::accumulate(gains.begin(), gains.end(), 0.0) / rsi_window_;
@@ -68,7 +69,7 @@ double DataEMA_RSI_BB::calculate_rsi() {
     return 100.0 - (100.0 / (1.0 + rs));
 }
 
-void DataEMA_RSI_BB::calculate_bollinger_bands(double& upper, double& middle, double& lower) {
+void DataEMA_RSI_BB::calculate_bollinger_bands(double &upper, double &middle, double &lower) {
     if (history_price_.size() < bb_window_) {
         upper = middle = lower = 0.0;
         return;

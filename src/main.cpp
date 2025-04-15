@@ -52,9 +52,7 @@ int main() {
     order_manager.start();
 
     // Инициализация стратегии EMA+RSI+Bollinger Bands
-    DataEMA_RSI_BB strategy(ema_short, ema_long, rsi_period,
-                            bb_period, bb_std_dev,
-                            overbought, oversold);
+    DataEMA_RSI_BB strategy(ema_short, ema_long, rsi_period, bb_period, bb_std_dev, overbought, oversold);
 
     strategy.set_trade_callback([&](const string &action, double price) {
         double initial_balance_USDT = acc_manager.get_balance("USDT");
@@ -186,23 +184,3 @@ int main() {
 }
 
 
-/*
- * E - текущее время
- * e - Свод. статистика за 24 часа
- * s - пара
- * p - абсолютное изменение цены за 24 часа
- * P - изменение в %
- * w - взвешенная средняя цена
- * x - закрытая цена предыдущего периода
- * c - текущая цена
- * b - лучшая цена покупки
- * B - Объём лучшей покупки
- * а - лучшая цена продажи
- * A - Объем лучшей продажи
- * о - цена открытия
- * h - Максимальная цена за 24 часа.
- * l - Минимальная цена за 24 часа.
- * v - Объём торгов в базовой валюте за 24 часа.
- * q - Объём торгов в котируемой валюте за 24 часа.
- *
- */
