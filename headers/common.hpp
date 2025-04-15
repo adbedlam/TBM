@@ -41,4 +41,6 @@
 
 #include <nlohmann/json.hpp>
 
+using std::max;
+
 #endif //COMMON_H

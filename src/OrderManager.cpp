@@ -26,6 +26,32 @@ void OrderManager::process_orders() {
                         Acc.on_order_executed(response);
                     }
 
+                    uint64_t timestamp = response["transactTime"].get<uint64_t>();
+
+
+                    double commission = 0.0;
+                    if (!response["fills"].empty()) {
+                        auto& fill = response["fills"][0];
+                        if (fill.contains("commission") && !fill["commission"].is_null()) {
+                            if (fill["commission"].is_string()) {
+                                commission = stod(fill["commission"].get<std::string>());
+                            } else if (fill["commission"].is_number()) {
+                                commission = fill["commission"].get<double>();
+                            }
+                        }
+                    }
+
+                    std::ofstream file("../utils/transactions.csv", std::ios::app);
+                    if (file.is_open()) {
+
+                        file << timestamp << ","
+                             << order.action << ","
+                             << order.symbol << ","
+                             << order.quant << ","
+                             << order.price << ","
+                             << commission << "\n";
+                        file.close();
+                    }
                     last_ord = now;
                 }
                 catch (const std::exception& e) {
@@ -59,6 +85,7 @@ void OrderManager::stop() {
 
 void OrderManager::add_order(const string& action, const string& symbol, double price, double quant) {
     std::lock_guard<mutex> lock(mutex_ord);
+    cout << action << " " << quant << endl;
     order_q.push({action, symbol, price, quant});
 }
 
