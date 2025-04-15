@@ -1,7 +1,7 @@
 #include "APIread.h"
 #include "BinanceWebsocket.h"
 #include "DataLog.h"
-#include "e_r_bb.h"
+#include "ERBB.h"
 #include "BinanceAPI.h"
 #include "OrderManager.h"
 
@@ -12,9 +12,18 @@ void signal_handler(int signum) {
     running = false;
 }
 
+
 int main() {
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
+
+    // Параметры для Ордера Бинанс
+
+    double min_price = 10.0;
+
+    double min_price_btc = 0.001;
+    double step_size = 0.001;
+
 
     // Параметры стратегии
     auto ema_short = 9 * 24 * 360 * 1000;
@@ -47,15 +56,36 @@ int main() {
                             overbought, oversold);
 
     strategy.set_trade_callback([&](const string &action, double price) {
+        double initial_balance_USDT = acc_manager.get_balance("USDT");
+        double initial_balance_BTC = acc_manager.get_balance("BTC");
+
+        double quant;
+
+        if (action == "BUY") {
+            initial_balance_USDT = acc_manager.get_balance("USDT");
+
+
+            quant = max(initial_balance_USDT * 0.15, min_price);
+            quant = std::floor((quant / price) / step_size) * step_size;
+        } else {
+            initial_balance_BTC = acc_manager.get_balance("BTC");
+
+
+            quant = std::max(initial_balance_BTC * 0.02, min_price_btc);
+
+            quant = std::floor(quant / step_size) * step_size;
+        }
+
+
         const string symbol = "BTCUSDT";
-        const double quantity = 0.0001; // Фиксированный объем
+        const double quantity = quant; // Фиксированный объем
 
         try {
             order_manager.add_order(
-                    action,
-                    symbol,
-                    price,
-                    quantity
+                action,
+                symbol,
+                price,
+                quantity
             );
         } catch (const exception &e) {
             cerr << "Error adding order: " << e.what() << endl;
@@ -84,10 +114,10 @@ int main() {
         if (data.contains("e") && data["e"] == "24hrTicker") {
             try {
                 DataCSV event{
-                        data["E"].get<uint64_t>(), // timestamp
-                        data["s"].get<string>(), // symbol
-                        stod(data["c"].get<string>()), // price
-                        stod(data["q"].get<string>()) // volume
+                    data["E"].get<uint64_t>(), // timestamp
+                    data["s"].get<string>(), // symbol
+                    stod(data["c"].get<string>()), // price
+                    stod(data["q"].get<string>()) // volume
                 };
 
                 // Логирование данных
@@ -102,7 +132,7 @@ int main() {
                 cout << "EMA Long: " << strategy.get_long_ema() << endl;
                 cout << "RSI: " << strategy.get_rsi() << endl;
                 cout << "Bollinger Bands: " << upper_bb << " | "
-                     << middle_bb << " | " << lower_bb << endl;
+                        << middle_bb << " | " << lower_bb << endl;
                 cout << "Current Price: " << event.price << "\n\n";
 
                 // Обновление стратегии
@@ -115,6 +145,7 @@ int main() {
 
     // Подключение WebSocket
     ws->connect("btcusdt@ticker");
+
 
     thread ws_thread([&ioc]() {
         while (running) {
@@ -135,7 +166,7 @@ int main() {
             cout << "Active orders: " << order_manager.queue_size() << endl;
             cout << "Current balance:" << endl;
             cout << "BTC: " << acc_manager.get_balance("BTC") << " | USDT: "
-                 << acc_manager.get_balance("USDT") << "\n\n";
+                    << acc_manager.get_balance("USDT") << "\n\n";
             std::this_thread::sleep_for(2s);
         }
     });

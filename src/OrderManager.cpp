@@ -7,7 +7,7 @@ void OrderManager::process_orders() {
     while (run) {
         auto now = steady_clock::now();
 
-        auto elepsed_t = duration_cast<milliseconds>( now - last_ord).count();
+        auto elepsed_t = duration_cast<milliseconds>(now - last_ord).count();
 
         if (elepsed_t >= 1000 / oreder_rate) {
             std::lock_guard<mutex> lock(mutex_ord);
@@ -17,12 +17,12 @@ void OrderManager::process_orders() {
                 order_q.pop();
 
                 try {
-                    json response = Api.create_order(order.symbol,order.action,"LIMIT",order.quant, order.price);
+                    json response = Api.create_order(order.symbol, order.action, "LIMIT", order.quant, order.price);
                     cout << endl;
-                    cout << "Order exec: " << response.dump(2) << endl;
+                    cout << "Order exec: " << endl; //<< response.dump(2) << endl;
 
 
-                    if(response.contains("status") && response["status"] == "FILLED") {
+                    if (response.contains("status") && response["status"] == "FILLED") {
                         Acc.on_order_executed(response);
                     }
 
@@ -53,17 +53,14 @@ void OrderManager::process_orders() {
                         file.close();
                     }
                     last_ord = now;
-                }
-                catch (const std::exception& e) {
+                } catch (const std::exception &e) {
                     cerr << "FAIL: " << e.what() << endl;
                 }
-
             }
         }
 
         std::this_thread::sleep_for(10ms);
     }
-
 }
 
 
@@ -80,17 +77,16 @@ void OrderManager::stop() {
     if (stream_t.joinable()) {
         stream_t.join();
     }
-
 }
 
-void OrderManager::add_order(const string& action, const string& symbol, double price, double quant) {
+void OrderManager::add_order(const string &action, const string &symbol, double price, double quant) {
     std::lock_guard<mutex> lock(mutex_ord);
     cout << action << " " << quant << endl;
     order_q.push({action, symbol, price, quant});
 }
 
 
-size_t OrderManager::queue_size()  {
+size_t OrderManager::queue_size() {
     std::lock_guard<std::mutex> lock(mutex_ord);
     return order_q.size();
 }

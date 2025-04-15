@@ -4,15 +4,14 @@ project(trade_bot)
 set(CMAKE_CXX_STANDARD 17)
 
 
-if(MSVC)
+if (MSVC)
     add_compile_definitions(_WIN32_WINNT=0x0A00)  # Windows 10+
     add_compile_options(/bigobj)
-else()
+else ()
     add_compile_options(-Wa,-mbig-obj)
-endif()
+endif ()
 
 find_package(Boost REQUIRED COMPONENTS system)
-
 
 
 find_package(OpenSSL REQUIRED)
@@ -39,11 +38,10 @@ add_executable(trade_bot src/main.cpp
         headers/OrderManager.h
         src/OrderManager.cpp
         headers/OrderManager.h
-        src/e_r_bb.cpp
-        headers/e_r_bb.h)
+        src/ERBB.cpp
+        headers/ERBB.h)
 
 target_include_directories(trade_bot PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/headers")
-
 
 
 target_link_libraries(trade_bot PRIVATE ws2_32)
