@@ -26,10 +26,10 @@ int main() {
 
 
     // Параметры стратегии
-    auto ema_short = 9; //* 24 * 360 * 1000;
-    auto ema_long = 21; //* 24 * 360 * 1000;
-    auto rsi_period = 14; //* 24 * 360 * 1000;
-    auto bb_period = 16; //* 24 * 360 * 1000;
+    auto ema_short = 9 * 24 * 360 * 1000;
+    auto ema_long = 21 * 24 * 360 * 1000;
+    auto rsi_period = 14 * 24 * 360 * 1000;
+    auto bb_period = 16 * 24 * 360 * 1000;
 
     auto bb_std_dev = 2.0;
     auto overbought = 70.0;
@@ -68,13 +68,13 @@ int main() {
             initial_balance_USDT = acc_manager.get_balance("USDT");
 
 
-            quant = max(initial_balance_USDT * 0.02, min_price);
+            quant = std::min(initial_balance_USDT * 0.02, min_price);
             quant = std::floor((quant / price) / step_size) * step_size;
         } else {
             initial_balance_BTC = acc_manager.get_balance("BTC");
 
 
-            quant = std::max(initial_balance_BTC * 0.02, min_price_btc);
+            quant = std::min(initial_balance_BTC * 0.02, min_price_btc);
 
             quant = std::floor(quant / step_size) * step_size;
         }

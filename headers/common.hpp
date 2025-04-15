@@ -13,11 +13,12 @@
 #include <fstream>
 #include <sstream>
 
-
 #include <mutex>
 #include <atomic>
 #include <thread>
 #include <chrono>
+
+#include <pqxx/pqxx>
 
 
 #include <unordered_map>

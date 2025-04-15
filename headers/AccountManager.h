@@ -27,6 +27,9 @@ private:
 
     double quote_qty;
 
+    double order_price{0};
+    double qnt_bought{0};
+
     void runing();
 
     void update_balance();

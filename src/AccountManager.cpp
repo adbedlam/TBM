@@ -36,6 +36,10 @@ void AccountManager::process_order(const json &order) {
         const std::string side = order["side"];
         quote_qty = std::stod(order["cummulativeQuoteQty"].get<std::string>());
         double commission = 0.0;
+        std::cout << order.dump(2);
+        return;
+        order_price = std::stod(order["price"].get<std::string>());
+
 
         for (const auto &fill: order["fills"]) {
             commission += std::stod(fill["commission"].get<std::string>());
@@ -68,7 +72,7 @@ double AccountManager::get_balance(const std::string &asset) {
 }
 
 double AccountManager::get_profit(const double &total_base_wallet) {
-    double current_wallet = get_balance("USDT") + get_balance("BTC") * quote_qty; // ???
+    double current_wallet = get_balance("USDT") + get_balance("BTC") * order_price;
 
     if ((current_wallet - total_base_wallet) > 0) {
         return current_wallet - total_base_wallet;

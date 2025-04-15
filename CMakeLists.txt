@@ -17,6 +17,8 @@ find_package(Boost REQUIRED COMPONENTS system)
 find_package(OpenSSL REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 
+find_package(PostgreSQL REQUIRED)
+find_package(pqxx REQUIRED)
 
 add_executable(trade_bot src/main.cpp
         src/APIread.cpp
@@ -40,6 +42,8 @@ add_executable(trade_bot src/main.cpp
         headers/OrderManager.h
         src/ERBB.cpp
         headers/ERBB.h
+        headers/DataBase.h
+        src/DataBase.cpp
 )
 
 target_include_directories(trade_bot PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/headers")
@@ -47,6 +51,8 @@ target_include_directories(trade_bot PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/header
 
 target_link_libraries(trade_bot PRIVATE ws2_32)
 target_link_libraries(trade_bot PRIVATE
+        pqxx::pqxx
+        PostgreSQL::PostgreSQL
         Boost::system
         OpenSSL::SSL
         OpenSSL::Crypto
