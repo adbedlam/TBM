@@ -30,6 +30,7 @@ int main() {
     auto ema_long = 21 * 24 * 360 * 1000;
     auto rsi_period = 14 * 24 * 360 * 1000;
     auto bb_period = 16 * 24 * 360 * 1000;
+
     auto bb_std_dev = 2.0;
     auto overbought = 70.0;
     auto oversold = 30.0;

@@ -2,8 +2,7 @@
 #define TRADE_BOT_E_R_BB_H
 
 #include "strategy.h"
-#include <vector>
-#include <cmath>
+
 
 class DataEMA_RSI_BB : public DataSMA {
 private:

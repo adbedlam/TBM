@@ -1,6 +1,5 @@
 #include "ERBB.h"
-#include <numeric>
-#include <cmath>
+
 
 DataEMA_RSI_BB::DataEMA_RSI_BB(int ema_short, int ema_long, int rsi,
                                int bb, double bb_dev,

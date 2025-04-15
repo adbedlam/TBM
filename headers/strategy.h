@@ -1,10 +1,6 @@
 #ifndef STRATEGY_H
 #define STRATEGY_H
-
-#include <string>
-#include <deque>
-#include <functional>
-#include <cstdint>
+#include "common.hpp"
 
 using std::string;
 using std::deque;

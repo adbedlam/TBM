@@ -1,5 +1,5 @@
 #include "strategy.h"
-#include <numeric>
+
 
 double DataSMA::calculate_sma(int window) {
     if (history_price_.size() < window) return 0.0;
