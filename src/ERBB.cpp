@@ -14,11 +14,17 @@ DataEMA_RSI_BB::DataEMA_RSI_BB(int ema_short, int ema_long, int rsi,
 
 void DataEMA_RSI_BB::update(DataCSV &data) {
     history_price_.push_back(data.price);
+    if (price == 0) {
+        price = data.price;
+    }
     const int max_length = std::max({ema_long_window_ * 2, rsi_window_ * 2, bb_window_ * 2});
     if (history_price_.size() > max_length) {
         history_price_.pop_front();
     }
     check_signal(data);
+}
+
+void DataEMA_RSI_BB::Calculate_profit() {
 }
 
 void DataEMA_RSI_BB::check_signal(const DataCSV &data) {
@@ -38,7 +44,6 @@ double DataEMA_RSI_BB::calculate_ema(int window) {
     for (auto it = history_price_.end() - window; it != history_price_.end(); ++it) {
         ema = (*it - ema) * multiplier + ema;
     }
-
     return ema;
 }
 

@@ -28,6 +28,7 @@
 #include <functional>
 #include <numeric>
 #include <ctime>
+#include <utility>
 
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>

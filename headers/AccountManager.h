@@ -24,7 +24,8 @@ private:
     thread stram_t;
 
     atomic<bool> run;
-    double profit;
+
+    double quote_qty;
 
     void runing();
 
@@ -34,7 +35,7 @@ private:
 
 public:
     AccountManager(BinanceAPIc &api)
-        : Api(api), run(false), profit(0.0) {
+        : Api(api), run(false) {
     }
 
     void start();
@@ -45,7 +46,7 @@ public:
 
     double get_free_balance(const string &asset); // Получить свободные средства
     double get_locked_balance(const string &asset); // Получить заблокированные средства
-    double get_profit();
+    double get_profit(const double &total_base_wallet);
 
     void on_order_executed(const json &order_response);
 };

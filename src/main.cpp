@@ -26,10 +26,10 @@ int main() {
 
 
     // Параметры стратегии
-    auto ema_short = 9 * 24 * 360 * 1000;
-    auto ema_long = 21 * 24 * 360 * 1000;
-    auto rsi_period = 14 * 24 * 360 * 1000;
-    auto bb_period = 16 * 24 * 360 * 1000;
+    auto ema_short = 9; //* 24 * 360 * 1000;
+    auto ema_long = 21; //* 24 * 360 * 1000;
+    auto rsi_period = 14; //* 24 * 360 * 1000;
+    auto bb_period = 16; //* 24 * 360 * 1000;
 
     auto bb_std_dev = 2.0;
     auto overbought = 70.0;
@@ -46,10 +46,14 @@ int main() {
 
     // Инициализация менеджеров
     AccountManager acc_manager(binance_api);
-    OrderManager order_manager(binance_api, acc_manager, 5); // 5 ордеров/сек
+    OrderManager order_manager(binance_api, acc_manager, 1); // 5 ордеров/сек
 
     acc_manager.start();
     order_manager.start();
+
+    double start_price{0};
+    double base_val_btc = acc_manager.get_balance("BTC");
+    const double base_val_usdt = acc_manager.get_balance("USDT");
 
     // Инициализация стратегии EMA+RSI+Bollinger Bands
     DataEMA_RSI_BB strategy(ema_short, ema_long, rsi_period, bb_period, bb_std_dev, overbought, oversold);
@@ -64,7 +68,7 @@ int main() {
             initial_balance_USDT = acc_manager.get_balance("USDT");
 
 
-            quant = max(initial_balance_USDT * 0.15, min_price);
+            quant = max(initial_balance_USDT * 0.02, min_price);
             quant = std::floor((quant / price) / step_size) * step_size;
         } else {
             initial_balance_BTC = acc_manager.get_balance("BTC");
@@ -77,7 +81,7 @@ int main() {
 
 
         const string symbol = "BTCUSDT";
-        const double quantity = quant; // Фиксированный объем
+        const double quantity = quant;
 
         try {
             order_manager.add_order(
@@ -118,7 +122,9 @@ int main() {
                     stod(data["c"].get<string>()), // price
                     stod(data["q"].get<string>()) // volume
                 };
-
+                if (start_price == 0) {
+                    start_price = event.price;
+                }
                 // Логирование данных
                 log_data(event);
 
@@ -133,6 +139,10 @@ int main() {
                 cout << "Bollinger Bands: " << upper_bb << " | "
                         << middle_bb << " | " << lower_bb << endl;
                 cout << "Current Price: " << event.price << "\n\n";
+
+                log_indicator_data(strategy.get_short_ema(), strategy.get_long_ema(),
+                                   strategy.get_rsi(), upper_bb,
+                                   lower_bb, middle_bb, event.price, event.timestamp);
 
                 // Обновление стратегии
                 strategy.update(event);
@@ -157,11 +167,12 @@ int main() {
             }
         }
     });
+    double total_balance = (start_price * base_val_btc) + base_val_usdt;
 
     thread monitor([&]() {
         while (running) {
             cout << "=== Status ===" << endl;
-            cout << "Total profit: " << acc_manager.get_profit() << " USDT" << endl;
+            cout << "Total profit: " << acc_manager.get_profit(total_balance) << " USDT" << endl;
             cout << "Active orders: " << order_manager.queue_size() << endl;
             cout << "Current balance:" << endl;
             cout << "BTC: " << acc_manager.get_balance("BTC") << " | USDT: "

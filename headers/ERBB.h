@@ -14,6 +14,8 @@ private:
     double overbought_level_;
     double oversold_level_;
 
+    double price{0};
+
     double calculate_ema(int window);
 
     double calculate_rsi();
@@ -41,6 +43,8 @@ public:
     void get_bollinger_bands(double &upper, double &middle, double &lower) {
         calculate_bollinger_bands(upper, middle, lower);
     }
+
+    void Calculate_profit();
 };
 
 #endif //TRADE_BOT_E_R_BB_H

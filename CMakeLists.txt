@@ -39,7 +39,8 @@ add_executable(trade_bot src/main.cpp
         src/OrderManager.cpp
         headers/OrderManager.h
         src/ERBB.cpp
-        headers/ERBB.h)
+        headers/ERBB.h
+)
 
 target_include_directories(trade_bot PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/headers")
 
