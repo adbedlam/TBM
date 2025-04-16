@@ -7,6 +7,17 @@
 #include "common.hpp"
 #include "strategy.h"
 
+struct Data30s {
+    DataCSV last_event;
+    double ema_short = 0;
+    double ema_long = 0;
+    double rsi = 0;
+    double upper_bb = 0;
+    double lower_bb = 0;
+    double middle_bb = 0;
+    bool has_data = false;
+};
+
 class DataBaseLog {
 private:
     pqxx::connection conn;
