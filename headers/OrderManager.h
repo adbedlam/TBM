@@ -6,6 +6,7 @@
 #include "common.hpp"
 #include "BinanceAPI.h"
 #include "AccountManager.h"
+#include "DataBase.h"
 
 using std::queue;
 using std::mutex;
@@ -31,6 +32,7 @@ private:
 
     BinanceAPIc& Api;
     AccountManager& Acc;
+    DataBaseLog& logger;
 
     queue<Order> order_q;
     mutex mutex_ord;
@@ -43,7 +45,7 @@ private:
     void process_orders();
 
 public:
-    OrderManager(BinanceAPIc& api, AccountManager& acc_mgr, int rate_lim): Api(api), Acc(acc_mgr) ,oreder_rate(rate_lim) {}
+    OrderManager(BinanceAPIc& api, AccountManager& acc_mgr, DataBaseLog& log, int rate_lim): Api(api), Acc(acc_mgr) ,oreder_rate(rate_lim), logger(log) {}
 
     void start();
 

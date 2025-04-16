@@ -1,9 +1,11 @@
 #include "APIread.h"
 #include "BinanceWebsocket.h"
-#include "DataLog.h"
 #include "ERBB.h"
 #include "BinanceAPI.h"
 #include "OrderManager.h"
+
+
+
 
 atomic<bool> running{true};
 
@@ -25,7 +27,7 @@ int main() {
     double step_size = 0.001;
 
 
-    // Параметры стратегии
+    // Параметры стратегии, ПОДУМАТЬ
     auto ema_short = 9 * 24 * 360 * 1000;
     auto ema_long = 21 * 24 * 360 * 1000;
     auto rsi_period = 14 * 24 * 360 * 1000;
@@ -41,12 +43,16 @@ int main() {
     const string SECRET = api_keys.at("SECRET_KEY");
     auto path_to_cacert = "../utils/cacert.pem";
 
+
+    // Инициализация БД-логера
+    DataBaseLog logger("dbname=TBM user=postgres password=qW-m98012.sDb host=localhost port=5432");
+
     // Инициализация API
     BinanceAPIc binance_api(API, SECRET);
 
     // Инициализация менеджеров
     AccountManager acc_manager(binance_api);
-    OrderManager order_manager(binance_api, acc_manager, 1); // 5 ордеров/сек
+    OrderManager order_manager(binance_api, acc_manager,logger, 1); // 5 ордеров/сек
 
     acc_manager.start();
     order_manager.start();
@@ -126,7 +132,7 @@ int main() {
                     start_price = event.price;
                 }
                 // Логирование данных
-                log_data(event);
+                logger.log_data(event); // TODO Подумать, как обернуть в отдельный поток, независящий
 
                 // Вывод текущих значений индикаторов
                 double upper_bb, middle_bb, lower_bb;
@@ -140,9 +146,12 @@ int main() {
                         << middle_bb << " | " << lower_bb << endl;
                 cout << "Current Price: " << event.price << "\n\n";
 
-                log_indicator_data(strategy.get_short_ema(), strategy.get_long_ema(),
+
+                // TODO Подумать, как обернуть в отдельный поток, независящий
+                logger.log_data(strategy.get_short_ema(), strategy.get_long_ema(),
                                    strategy.get_rsi(), upper_bb,
-                                   lower_bb, middle_bb, event.price, event.timestamp);
+                                   lower_bb, middle_bb,
+                                   event.price, event.timestamp);
 
                 // Обновление стратегии
                 strategy.update(event);

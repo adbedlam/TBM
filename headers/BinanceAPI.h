@@ -25,7 +25,7 @@ private:
     string sign_request(const string &query);
 
 
-    int64_t BinanceAPIc::get_server_time();
+    int64_t get_server_time();
 
     //Время на компе
     int64_t get_current_timestamp_ms();

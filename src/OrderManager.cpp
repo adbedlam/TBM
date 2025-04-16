@@ -1,5 +1,7 @@
 #include "OrderManager.h"
 
+
+
 // Private
 void OrderManager::process_orders() {
     auto last_ord = steady_clock::now();
@@ -41,22 +43,26 @@ void OrderManager::process_orders() {
                         }
                     }
 
-                    std::ofstream file("../utils/transactions.csv", std::ios::app);
-                    if (file.is_open()) {
+                    logger.log_data(timestamp, order.action, order.symbol, order.quant, order.price, commission);
 
-                        file << timestamp << ","
-                             << order.action << ","
-                             << order.symbol << ","
-                             << order.quant << ","
-                             << order.price << ","
-                             << commission << "\n";
-                        file.close();
-                    }
+
+                    // std::ofstream file("../utils/transactions.csv", std::ios::app);
+                    //
+                    // if (file.is_open()) {
+                    //
+                    //     file << timestamp << ","
+                    //          << order.action << ","
+                    //          << order.symbol << ","
+                    //          << order.quant << ","
+                    //          << commission << "\n";
+                    //     file.close();
+                    // }
                     last_ord = now;
                 } catch (const std::exception &e) {
                     cerr << "FAIL: " << e.what() << endl;
                 }
-            }
+            } //          << order.price << ","
+
         }
 
         std::this_thread::sleep_for(10ms);

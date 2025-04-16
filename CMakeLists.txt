@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.28)
 project(trade_bot)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 
 if (MSVC)
@@ -17,16 +17,13 @@ find_package(Boost REQUIRED COMPONENTS system)
 find_package(OpenSSL REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 
-find_package(PostgreSQL REQUIRED)
-find_package(pqxx REQUIRED)
+find_package(libpqxx CONFIG REQUIRED)
 
 add_executable(trade_bot src/main.cpp
         src/APIread.cpp
         headers/APIread.h
         headers/BinanceWebsocket.h
         src/BinanceWebsocket.cpp
-        headers/DataLog.h
-        headers/DataLog.h
         headers/common.hpp
         src/strategy.cpp
         headers/strategy.h
@@ -46,12 +43,12 @@ add_executable(trade_bot src/main.cpp
         src/DataBase.cpp
 )
 
-target_include_directories(trade_bot PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/headers")
+target_include_directories(trade_bot PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/headers" )
 
 
 target_link_libraries(trade_bot PRIVATE ws2_32)
 target_link_libraries(trade_bot PRIVATE
-        pqxx::pqxx
+        libpqxx::pqxx
         PostgreSQL::PostgreSQL
         Boost::system
         OpenSSL::SSL
