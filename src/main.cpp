@@ -146,13 +146,14 @@ int main() {
     ws->on_message([&](const json &data) {
         if (!running) return;
 
-        if (data.contains("e") && data["e"] == "24hrTicker") {
+        if (data.contains("e") && data["e"] == "kline") {
             try {
+                cout << data.dump(2) << "\n\n";
                 DataCSV event{
                     data["E"].get<uint64_t>(), // timestamp
                     data["s"].get<string>(), // symbol
-                    stod(data["c"].get<string>()), // price
-                    stod(data["q"].get<string>()) // volume
+                    stod(data["k"]["c"].get<string>()), // price
+                    stod(data["k"]["v"].get<string>()) // volume
                 };
 
 
@@ -208,7 +209,7 @@ int main() {
 
 
     // Подключение WebSocket
-    ws->connect("btcusdt@ticker");
+    ws->connect("btcusdt@kline_1m");
 
 
     // Поток Вебсокета
