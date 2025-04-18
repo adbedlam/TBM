@@ -48,7 +48,7 @@ json BinanceAPIc::get_historical_klines(
     std::map<std::string, std::string> params = {
             {"symbol", symbol},
             {"interval", interval},
-            {"limit", std::to_string(limit)}
+            {"limit", std::to_string(limit)},
     };
 
     if (start_time > 0) {

@@ -38,11 +38,20 @@ public:
 
     void update(DataCSV &data) override;
 
-    bool should_buy() override;
+    double get_macd_mid() {
+        if (macd_line_.empty()) {
+            return 0;
+        }
+        return macd_line_.back();
+    }
 
-    bool should_sell() override;
+    double get_macd_signal() {
+        if (signal_line_.empty()) {
+            return 0;
+        }
+        return signal_line_.back();
+    }
 
-    // Дополнительные методы
     double get_rsi() { return calculate_rsi(); }
 
     void get_bollinger_bands(double &upper, double &middle, double &lower) {

@@ -81,7 +81,8 @@ void DataEMA_RSI_BB::calculate_macd(double &macd, double &signal, double &histog
         return;
     }
     // Вычисляем EMA для быстрой и медленной линии
-    double fast_ema = 0, slow_ema = 0;
+    double fast_ema = 0;
+    double slow_ema = 0;
     double fast_mult = 2.0 / (macd_fast_ + 1);
     double slow_mult = 2.0 / (macd_slow_ + 1);
 
@@ -141,39 +142,3 @@ void DataEMA_RSI_BB::check_signal(const DataCSV &data) {
     }
 }
 
-/* bool DataEMA_RSI_BB::should_buy() {
-    if (history_price_.size() < ema_long_window_) return false;
-
-    double ema_short = calculate_ema(ema_short_window_);
-    double ema_long = calculate_ema(ema_long_window_);
-    double rsi = calculate_rsi();
-    double upper_bb, middle_bb, lower_bb;
-    calculate_bollinger_bands(upper_bb, middle_bb, lower_bb);
-
-    double current_price = history_price_.back();
-
-    bool ema_condition = ema_short > ema_long;
-    bool rsi_condition = rsi < oversold_level_;
-    bool bb_condition = current_price < lower_bb;
-
-    return ema_condition && rsi_condition && bb_condition;
-}
-
-bool DataEMA_RSI_BB::should_sell() {
-    if (history_price_.size() < ema_long_window_) return false;
-
-    double ema_short = calculate_ema(ema_short_window_);
-    double ema_long = calculate_ema(ema_long_window_);
-    double rsi = calculate_rsi();
-    double upper_bb, middle_bb, lower_bb;
-    calculate_bollinger_bands(upper_bb, middle_bb, lower_bb);
-
-    double current_price = history_price_.back();
-
-    bool ema_condition = ema_short < ema_long;
-    bool rsi_condition = rsi > overbought_level_;
-    bool bb_condition = current_price > upper_bb;
-
-    return ema_condition || rsi_condition || bb_condition;
-}
-*/

@@ -9,8 +9,8 @@
 
 struct Data30s {
     DataCSV last_event;
-    double ema_short = 0;
-    double ema_long = 0;
+    double macd = 0;
+    double macd_signal = 0;
     double rsi = 0;
     double upper_bb = 0;
     double lower_bb = 0;
@@ -24,11 +24,15 @@ private:
 
     void create_tables_if_missing(pqxx::connection& c) {
         pqxx::work txn(c);
+
+        txn.exec("DO $$BEGIN IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'TBM') THEN CREATE DATABASE TBM;END IF;END $$");
+
+    
         txn.exec(
             "CREATE TABLE IF NOT EXISTS indicators ("
             "id SERIAL PRIMARY KEY,"
-            "sema DOUBLE PRECISION NOT NULL,"
-            "lema DOUBLE PRECISION NOT NULL,"
+            "macd DOUBLE PRECISION NOT NULL,"
+            "macd_signal DOUBLE PRECISION NOT NULL,"
             "rsi DOUBLE PRECISION NOT NULL,"
             "upper_band DOUBLE PRECISION NOT NULL,"
             "lower_band DOUBLE PRECISION NOT NULL,"
@@ -76,7 +80,7 @@ private:
 
             conn.prepare(
                 "insert_indicators",
-                "INSERT INTO indicators (sema, lema, rsi, upper_band, lower_band, middle_band, price, timestamp) "
+                "INSERT INTO indicators (macd, macd_signal, rsi, upper_band, lower_band, middle_band, price, timestamp) "
                 "VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"
             );
 

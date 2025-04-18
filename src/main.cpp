@@ -53,7 +53,7 @@ int main() {
 
 
     // Инициализация БД-логера
-    const string db_name = "T_B_database";
+    const string db_name = "TBM";
     const string db_user = "postgres";
     const string db_host = "localhost";
     const string db_port = "5432";
@@ -95,12 +95,13 @@ int main() {
         cout << "Gathering historical data..." << endl;
         json historical_klines = binance_api.get_historical_klines(
                 "BTCUSDT",
-                "5m",
-                26 * 288  // 26 дней в 5ти минутных свечах
+                "1h",
+                624  // 26 дней в 5ти минутных свечах
         );
 
-        if (historical_klines.size() < 26 * 288 * 0.9) { // Минимум 90%
+        if (historical_klines.size() < 17 * 24 * 0.9) { // Минимум 90%
             cerr << "Warning: Only " << historical_klines.size() << "/7488 klines loaded!" << endl;
+
         }
 
         for (const auto &kline : historical_klines) {
@@ -147,9 +148,7 @@ int main() {
             }
         }
         quant = std::min(balance * percent, min_order);
-        quant = std::floor((action.find("BUY") != string::npos ?
-                            (quant / price) / step_size :
-                            quant) / step_size) * step_size;
+        quant = std::floor((action.find("BUY") != string::npos ? (quant / price) / step_size : quant) / step_size) * step_size;
 
 
         const string symbol = "BTCUSDT";
@@ -190,7 +189,7 @@ int main() {
 
         if (data.contains("e") && data["e"] == "kline") {
             try {
-                cout << data.dump(2) << "\n\n";
+
                 DataCSV event{
                     data["E"].get<uint64_t>(), // timestamp
                     data["s"].get<string>(), // symbol
@@ -217,8 +216,8 @@ int main() {
                 strategy.get_bollinger_bands(upper_bb, middle_bb, lower_bb);
 
                 cout << "====== Indicators " << std::put_time(&tm_info, "%F %T") << " ======" << endl;
-                cout << "EMA Short: " << strategy.get_short_ema() << endl;
-                cout << "EMA Long: " << strategy.get_long_ema() << endl;
+                // cout << "EMA Short: " << strategy.get_short_ema() << endl;
+                // cout << "EMA Long: " << strategy.get_long_ema() << endl;
                 cout << "RSI: " << strategy.get_rsi() << endl;
                 cout << "Bollinger Bands: " << upper_bb << " | "
                         << middle_bb << " | " << lower_bb << endl;
@@ -229,8 +228,8 @@ int main() {
                 {
                        lock_guard<std::mutex> lock(data_mutex);
                        data30_s.last_event = event;
-                       data30_s.ema_short = strategy.get_short_ema();
-                       data30_s.ema_long = strategy.get_long_ema();
+                       data30_s.macd = strategy.get_macd_mid();
+                       data30_s.macd_signal = strategy.get_macd_signal();
                        data30_s.rsi = strategy.get_rsi();
                        data30_s.upper_bb = upper_bb;
                        data30_s.lower_bb = lower_bb;
@@ -250,7 +249,7 @@ int main() {
 
 
 
-    // Подключение WebSocket
+    // Подключение WebSocket, Параметры свечи либо 24hours@Ticker
     ws->connect("btcusdt@kline_5m");
 
 
@@ -309,8 +308,8 @@ int main() {
                logger.log_data(local_data.last_event);
 
                logger.log_data(
-                   local_data.ema_short,
-                   local_data.ema_long,
+                   local_data.macd,
+                   local_data.macd_signal,
                    local_data.rsi,
                    local_data.upper_bb,
                    local_data.lower_bb,
