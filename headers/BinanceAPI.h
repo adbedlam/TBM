@@ -16,6 +16,7 @@ using std::hex;
 using std::setw;
 using std::setfill;
 
+
 class BinanceAPIc {
 private:
     string api_key;
@@ -38,6 +39,14 @@ public:
 
     json http_request(const string &method, const string &endpoint, const map<string, string> &params = {},
                       bool flag_time = false);
+
+    json get_historical_klines(
+            const std::string &symbol,
+            const std::string &interval,
+            int limit,
+            int64_t start_time = 0,
+            int64_t end_time = 0
+    );
 };
 
 

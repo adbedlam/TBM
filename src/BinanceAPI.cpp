@@ -38,6 +38,28 @@ string BinanceAPIc::sign_request(const string &query) {
     return ss.str();
 }
 
+json BinanceAPIc::get_historical_klines(
+        const std::string &symbol,
+        const std::string &interval,
+        int limit,
+        int64_t start_time,
+        int64_t end_time
+) {
+    std::map<std::string, std::string> params = {
+            {"symbol", symbol},
+            {"interval", interval},
+            {"limit", std::to_string(limit)}
+    };
+
+    if (start_time > 0) {
+        params["startTime"] = std::to_string(start_time);
+    }
+    if (end_time > 0) {
+        params["endTime"] = std::to_string(end_time);
+    }
+
+    return http_request("GET", "/api/v3/klines", params, true);
+}
 
 json BinanceAPIc::http_request(const string &method, const string &endpoint, const map<string, string> &params,
                                bool flag_time) {

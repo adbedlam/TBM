@@ -6,28 +6,35 @@
 
 class DataEMA_RSI_BB : public DataSMA {
 private:
-    int ema_short_window_;
-    int ema_long_window_;
+    // Для длинной стратегии
     int rsi_window_;
     int bb_window_;
     double bb_std_dev_;
     double overbought_level_;
     double oversold_level_;
 
+    // Для короткой стратегии
+    int macd_fast_;
+    int macd_slow_;
+    int macd_signal_;
+    deque<double> macd_line_;
+    deque<double> signal_line_;
+
     double price{0};
-
-    double calculate_ema(int window);
-
+    // Методы для длинной стратегии
     double calculate_rsi();
 
     void calculate_bollinger_bands(double &upper, double &middle, double &lower);
 
+    // Методы для корткой стратегии
+    void calculate_macd(double &macd, double &signal, double &histogram);
+
     void check_signal(const DataCSV &data) override;
 
 public:
-    DataEMA_RSI_BB(int ema_short = 9, int ema_long = 21, int rsi = 14,
-                   int bb = 20, double bb_dev = 2.0,
-                   double overbought = 70.0, double oversold = 30.0);
+    DataEMA_RSI_BB(int rsi = 14, int bb = 20, double bb_dev = 2.0,
+                   double overbought = 70.0, double oversold = 30.0,
+                   int macd_fast = 12, int macd_slow = 26, int macd_signal = 9);
 
     void update(DataCSV &data) override;
 
@@ -36,14 +43,15 @@ public:
     bool should_sell() override;
 
     // Дополнительные методы
-    double get_short_ema() { return calculate_ema(ema_short_window_); }
-    double get_long_ema() { return calculate_ema(ema_long_window_); }
     double get_rsi() { return calculate_rsi(); }
 
     void get_bollinger_bands(double &upper, double &middle, double &lower) {
         calculate_bollinger_bands(upper, middle, lower);
     }
-
+    
+    void get_macd(double &macd, double &signal, double &histogram) {
+        calculate_macd(macd, signal, histogram);
+    }
     void Calculate_profit();
 };
 

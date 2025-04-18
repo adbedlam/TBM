@@ -30,15 +30,16 @@ int main() {
 
 
     // Параметры стратегии, ПОДУМАТЬ
-    auto ema_short = 9 * 24 * 360 * 1000;
-    auto ema_long = 21 * 24 * 360 * 1000;
-    auto rsi_period = 14 * 24 * 360 * 1000;
-    auto bb_period = 16 * 24 * 360 * 1000;
+    auto rsi_period = 14 * 288; // * 24 * 360 * 1000;
+    auto bb_period = 16 * 288; //* 24 * 360 * 1000;
 
     auto bb_std_dev = 2.0;
     auto overbought = 70.0;
     auto oversold = 30.0;
 
+    auto macd_fast = 12 * 288;
+    auto macd_slow = 26 * 288;
+    auto macd_signal = 9 * 288;
 
     // Считывание API ключей
     const auto api_keys = loadConf("../utils/.env");
@@ -52,7 +53,7 @@ int main() {
 
 
     // Инициализация БД-логера
-    const string db_name = "TBM";
+    const string db_name = "T_B_database";
     const string db_user = "postgres";
     const string db_host = "localhost";
     const string db_port = "5432";
@@ -86,28 +87,69 @@ int main() {
 
 
     // Инициализация стратегии EMA+RSI+Bollinger Bands
-    DataEMA_RSI_BB strategy(ema_short, ema_long, rsi_period, bb_period, bb_std_dev, overbought, oversold);
+    DataEMA_RSI_BB strategy(rsi_period, bb_period,
+                            bb_std_dev, overbought,
+                            oversold, macd_fast, macd_slow,
+                            macd_signal);
+    try {
+        cout << "Gathering historical data..." << endl;
+        json historical_klines = binance_api.get_historical_klines(
+                "BTCUSDT",
+                "5m",
+                26 * 288  // 26 дней в 5ти минутных свечах
+        );
+
+        if (historical_klines.size() < 26 * 288 * 0.9) { // Минимум 90%
+            cerr << "Warning: Only " << historical_klines.size() << "/7488 klines loaded!" << endl;
+        }
+
+        for (const auto &kline : historical_klines) {
+            DataCSV historical_data{
+                    kline[0].get<uint64_t>(),               // timestamp
+                    "BTCUSDT",                              // symbol
+                    std::stod(kline[4].get<std::string>()), // close price
+                    std::stod(kline[5].get<std::string>())  // volume
+            };
+            strategy.update(historical_data); // Наполняем историю
+        }
+        cout << "Ready! " << historical_klines.size() << " klines." << endl;
+    } catch (const exception &e) {
+        cerr << "error getting history: " << e.what() << endl;
+        return 1;
+    }
 
     strategy.set_trade_callback([&](const string &action, double price) {
-        double initial_balance_USDT = acc_manager.get_balance("USDT");
-        double initial_balance_BTC = acc_manager.get_balance("BTC");
 
         double quant;
+        double balance;
+        double min_order;
+        double percent;
 
-        if (action == "BUY") {
-            initial_balance_USDT = acc_manager.get_balance("USDT");
-
-
-            quant = std::min(initial_balance_USDT * 0.02, min_price);
-            quant = std::floor((quant / price) / step_size) * step_size;
+        if (action.find("LONG") != string::npos) {
+            // Длинная стратегия - 10% балланса
+            percent = 0.1;
+            if (action == "LONG_BUY") {
+                balance = acc_manager.get_balance("USDT");
+                min_order = min_price;
+            } else {
+                balance = acc_manager.get_balance("BTC");
+                min_order = min_price_btc;
+            }
         } else {
-            initial_balance_BTC = acc_manager.get_balance("BTC");
-
-
-            quant = std::min(initial_balance_BTC * 0.02, min_price_btc);
-
-            quant = std::floor(quant / step_size) * step_size;
+            // Короткая стратегия - 5% баланса
+            percent = 0.05;
+            if (action == "SHORT_BUY") {
+                balance = acc_manager.get_balance("USDT");
+                min_order = min_price;
+            } else {
+                balance = acc_manager.get_balance("BTC");
+                min_order = min_price_btc;
+            }
         }
+        quant = std::min(balance * percent, min_order);
+        quant = std::floor((action.find("BUY") != string::npos ?
+                            (quant / price) / step_size :
+                            quant) / step_size) * step_size;
 
 
         const string symbol = "BTCUSDT";
@@ -115,7 +157,7 @@ int main() {
 
         try {
             order_manager.add_order(
-                action,
+                action.substr(action.find('_') + 1),
                 symbol,
                 price,
                 quantity
@@ -209,7 +251,7 @@ int main() {
 
 
     // Подключение WebSocket
-    ws->connect("btcusdt@kline_1m");
+    ws->connect("btcusdt@kline_5m");
 
 
     // Поток Вебсокета
