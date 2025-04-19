@@ -53,7 +53,7 @@ int main() {
 
 
     // Инициализация БД-логера
-    const string db_name = "TBM";
+    const string db_name = "T_B_database";
     const string db_user = "postgres";
     const string db_host = "localhost";
     const string db_port = "5432";
@@ -93,29 +93,69 @@ int main() {
                             macd_signal);
     try {
         cout << "Gathering historical data..." << endl;
-        json historical_klines = binance_api.get_historical_klines(
-                "BTCUSDT",
-                "1h",
-                624  // 26 дней в 5ти минутных свечах
-        );
 
-        if (historical_klines.size() < 17 * 24 * 0.9) { // Минимум 90%
-            cerr << "Warning: Only " << historical_klines.size() << "/7488 klines loaded!" << endl;
+        const int days = 26;
+        const int candles_per_day = 24 * 12; // 5-минутные свечи (12 в час * 24 часа)
+        const int total_candles_needed = days * candles_per_day;
+        const int max_candles_per_request = 1000; // Ограничение Binance
 
+        std::vector<json> all_klines;
+        int64_t end_time = binance_api.get_server_time(); // Используем публичный метод
+        int attempts = 0;
+        const int max_attempts = 10;
+
+        while (all_klines.size() < total_candles_needed && attempts < max_attempts) {
+            int64_t start_time = end_time - (max_candles_per_request * 5 * 60 * 1000);
+
+            json klines = binance_api.get_historical_klines(
+                    "BTCUSDT",
+                    "5m",
+                    max_candles_per_request,
+                    start_time,
+                    end_time
+            );
+
+            if (klines.empty()) {
+                cerr << "Warning: Empty response from API" << endl;
+                attempts++;
+                continue;
+            }
+
+            // Добавляем свечи в обратном порядке (от старых к новым)
+            for (auto it = klines.rbegin(); it != klines.rend(); ++it) {
+                all_klines.push_back(*it);
+            }
+
+            end_time = start_time;
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+            cout << "Loaded " << all_klines.size() << " of " << total_candles_needed
+                 << " candles (" << (100 * all_klines.size() / total_candles_needed) << "%)" << endl;
         }
 
-        for (const auto &kline : historical_klines) {
+        if (all_klines.size() > total_candles_needed) {
+            all_klines.erase(all_klines.begin(), all_klines.begin() + (all_klines.size() - total_candles_needed));
+        }
+
+        if (all_klines.size() < total_candles_needed * 0.9) {
+            cerr << "Warning: Only " << all_klines.size() << "/" << total_candles_needed
+                 << " klines loaded!" << endl;
+        }
+
+        // Заполняем стратегию
+        for (const auto &kline : all_klines) {
             DataCSV historical_data{
-                    kline[0].get<uint64_t>(),               // timestamp
-                    "BTCUSDT",                              // symbol
-                    std::stod(kline[4].get<std::string>()), // close price
-                    std::stod(kline[5].get<std::string>())  // volume
+                    kline[0].get<uint64_t>(),
+                    "BTCUSDT",
+                    std::stod(kline[4].get<std::string>()),
+                    std::stod(kline[5].get<std::string>())
             };
-            strategy.update(historical_data); // Наполняем историю
+            strategy.update(historical_data);
         }
-        cout << "Ready! " << historical_klines.size() << " klines." << endl;
+
+        cout << "Ready! " << all_klines.size() << " klines loaded." << endl;
     } catch (const exception &e) {
-        cerr << "error getting history: " << e.what() << endl;
+        cerr << "Error getting history: " << e.what() << endl;
         return 1;
     }
 
@@ -294,7 +334,7 @@ int main() {
     // Поток для логирования данных (индикаторы, исторические), каждые 30с
     thread db_log_data_thread([&]() {
         while (running) {
-           std::this_thread::sleep_for(30s);
+           std::this_thread::sleep_for(305s);
 
            Data30s local_data;
            {

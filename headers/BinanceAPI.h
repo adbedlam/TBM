@@ -25,13 +25,12 @@ private:
 
     string sign_request(const string &query);
 
-
-    int64_t get_server_time();
-
     //Время на компе
     int64_t get_current_timestamp_ms();
 
 public:
+    int64_t get_server_time();
+
     BinanceAPIc(const string &api_key, const string &secret_key);
 
     json create_order(const string &symbol, const string &side, const string &type, double quantity,
