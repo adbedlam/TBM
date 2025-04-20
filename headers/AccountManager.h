@@ -41,6 +41,12 @@ public:
         : Api(api), run(false) {
     }
 
+    bool has_sufficient_balance(const string &asset, double required) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = balance.find(asset);
+        return it != balance.end() && it->second >= required;
+    }
+
     void start();
 
     void stop();

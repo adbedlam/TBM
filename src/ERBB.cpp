@@ -25,6 +25,55 @@ void DataEMA_RSI_BB::update(DataCSV &data) {
 
     check_signal(data);
 }
+void DataEMA_RSI_BB::check_signal(const DataCSV &data) {
+    std::lock_guard<std::mutex> lock(strategy_mutex_);
+    auto now = std::chrono::system_clock::now();
+
+    // Cooldown 5 минут между сделками
+    if (last_trade_time_ + std::chrono::minutes(5) > now) {
+        return;
+    }
+
+    double rsi = calculate_rsi();
+    double upper_bb, middle_bb, lower_bb;
+    calculate_bollinger_bands(upper_bb, middle_bb, lower_bb);
+
+    double macd, signal, histogram;
+    calculate_macd(macd, signal, histogram);
+
+    // Длинная стратегия
+    if (price < lower_bb && rsi < oversold_level_ &&
+        last_trade_ != LastTrade::LONG_BUY && last_trade_ != LastTrade::SHORT_BUY) {
+        trade_callback("LONG_BUY", price);
+        last_trade_ = LastTrade::LONG_BUY;
+        last_trade_time_ = now;
+    }
+    else if (price > upper_bb && rsi > overbought_level_ &&
+             last_trade_ != LastTrade::LONG_SELL && last_trade_ != LastTrade::SHORT_SELL) {
+        trade_callback("LONG_SELL", price);
+        last_trade_ = LastTrade::LONG_SELL;
+        last_trade_time_ = now;
+    }
+
+    // Короткая стратегия
+    if (histogram > 0 && macd > signal &&
+        last_trade_ != LastTrade::SHORT_BUY && last_trade_ != LastTrade::LONG_BUY) {
+        trade_callback("SHORT_BUY", price);
+        last_trade_ = LastTrade::SHORT_BUY;
+        last_trade_time_ = now;
+    }
+    else if (histogram < 0 && macd < signal &&
+             last_trade_ != LastTrade::SHORT_SELL && last_trade_ != LastTrade::LONG_SELL) {
+        trade_callback("SHORT_SELL", price);
+        last_trade_ = LastTrade::SHORT_SELL;
+        last_trade_time_ = now;
+    }
+}
+
+void DataEMA_RSI_BB::reset_trade_state() {
+    std::lock_guard<std::mutex> lock(strategy_mutex_);
+    last_trade_ = LastTrade::NONE;
+}
 
 void DataEMA_RSI_BB::Calculate_profit() {
 }
@@ -116,29 +165,6 @@ void DataEMA_RSI_BB::calculate_macd(double &macd, double &signal, double &histog
     if (macd_line_.size() > macd_signal_ * 2) {
         macd_line_.pop_front();
         signal_line_.pop_front();
-    }
-}
-
-void DataEMA_RSI_BB::check_signal(const DataCSV &data) {
-    double rsi = calculate_rsi();
-    double upper_bb, middle_bb, lower_bb;
-    calculate_bollinger_bands(upper_bb, middle_bb, lower_bb);
-
-    double macd, signal, histogram;
-    calculate_macd(macd, signal, histogram);
-
-    //длинная стратегия
-    if (price < lower_bb && rsi < oversold_level_) {
-        trade_callback("LONG_BUY", price);
-    } else if (price > upper_bb && rsi > overbought_level_){
-        trade_callback("LONG_SELL", price);
-    }
-
-    //короткая стратегия
-    if (histogram > 0 && macd > signal) {
-        trade_callback("SHORT_BUY", price);
-    } else if (histogram < 0 && macd < signal) {
-        trade_callback ("SHORT_SELL", price);
     }
 }
 

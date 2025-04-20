@@ -21,6 +21,12 @@ private:
     deque<double> signal_line_;
 
     double price{0};
+
+    std::mutex strategy_mutex_;
+    enum class LastTrade { NONE, LONG_BUY, LONG_SELL, SHORT_BUY, SHORT_SELL };
+    LastTrade last_trade_ = LastTrade::NONE;
+    std::chrono::system_clock::time_point last_trade_time_;
+
     // Методы для длинной стратегии
     double calculate_rsi();
 
@@ -28,6 +34,7 @@ private:
 
     // Методы для корткой стратегии
     void calculate_macd(double &macd, double &signal, double &histogram);
+
 
     void check_signal(const DataCSV &data) override;
 
@@ -37,6 +44,7 @@ public:
                    int macd_fast = 12, int macd_slow = 26, int macd_signal = 9);
 
     void update(DataCSV &data) override;
+    void reset_trade_state();
 
     double get_macd_mid() {
         if (macd_line_.empty()) {

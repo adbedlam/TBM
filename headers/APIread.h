@@ -11,4 +11,5 @@ using std::endl;
 
 
 map<string, string> loadConf(const string& filename);
+nlohmann::json loadJsonData(const string& filename);  // Добавлено
 #endif //APIREAD_H
