@@ -15,7 +15,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
 
 WORKDIR /TBM
 
-COPY . .
+COPY utils .
 
 RUN mkdir -p build && cd build && cmake .. && make -j$(nproc)
 
