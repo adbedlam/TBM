@@ -13,17 +13,10 @@ private:
     double overbought_level_;
     double oversold_level_;
 
-    // Для короткой стратегии
-    int macd_fast_;
-    int macd_slow_;
-    int macd_signal_;
-    deque<double> macd_line_;
-    deque<double> signal_line_;
-
     double price{0};
 
     std::mutex strategy_mutex_;
-    enum class LastTrade { NONE, LONG_BUY, LONG_SELL, SHORT_BUY, SHORT_SELL };
+    enum class LastTrade { NONE, LONG_BUY, LONG_SELL};
     LastTrade last_trade_ = LastTrade::NONE;
     std::chrono::system_clock::time_point last_trade_time_;
 
@@ -32,43 +25,22 @@ private:
 
     void calculate_bollinger_bands(double &upper, double &middle, double &lower);
 
-    // Методы для корткой стратегии
-    void calculate_macd(double &macd, double &signal, double &histogram);
-
-
     void check_signal(const DataCSV &data) override;
 
 public:
     DataEMA_RSI_BB(int rsi = 14, int bb = 20, double bb_dev = 2.0,
-                   double overbought = 70.0, double oversold = 30.0,
-                   int macd_fast = 12, int macd_slow = 26, int macd_signal = 9);
+                   double overbought = 70.0, double oversold = 30.0);
 
     void update(DataCSV &data) override;
     void reset_trade_state();
 
-    double get_macd_mid() {
-        if (macd_line_.empty()) {
-            return 0;
-        }
-        return macd_line_.back();
-    }
-
-    double get_macd_signal() {
-        if (signal_line_.empty()) {
-            return 0;
-        }
-        return signal_line_.back();
-    }
 
     double get_rsi() { return calculate_rsi(); }
 
     void get_bollinger_bands(double &upper, double &middle, double &lower) {
         calculate_bollinger_bands(upper, middle, lower);
     }
-    
-    void get_macd(double &macd, double &signal, double &histogram) {
-        calculate_macd(macd, signal, histogram);
-    }
+
     void Calculate_profit();
 };
 

@@ -3,7 +3,7 @@
 #include "ERBB.h"
 #include "BinanceAPI.h"
 #include "OrderManager.h"
-
+#include "MACDST.h"
 
 using json = nlohmann::json;
 
@@ -29,16 +29,17 @@ int main() {
 
 
     // Параметры стратегии, ПОДУМАТЬ
-    auto rsi_period = 14 * 288; // * 24 * 360 * 1000;
-    auto bb_period = 16 * 288; //* 24 * 360 * 1000;
+    auto rsi_period = 14 * 48; // * 24 * 360 * 1000;
+    auto bb_period = 20 * 48; //* 24 * 360 * 1000;
 
     auto bb_std_dev = 2.0;
     auto overbought = 70.0;
     auto oversold = 30.0;
 
-    auto macd_fast = 12 * 288;
-    auto macd_slow = 26 * 288;
-    auto macd_signal = 9 * 288;
+    auto macd_fast = 12 * 48;
+    auto macd_slow = 26 * 48;
+    auto macd_signal = 9 * 48;
+    auto ema_long = 200 * 48;
 
     // Считывание API ключей
     const auto api_keys = loadConf("../utils/.env");
@@ -86,56 +87,26 @@ int main() {
 
 
     // Инициализация стратегии EMA+RSI+Bollinger Bands
-    DataEMA_RSI_BB strategy(rsi_period, bb_period,
+    DataEMA_RSI_BB strategy_rsi_bb(rsi_period, bb_period,
                             bb_std_dev, overbought,
-                            oversold, macd_fast, macd_slow,
-                            macd_signal);
-    try {
-        cout << "Loading historical data from JSON file..." << endl;
-
-        // Загрузка данных из JSON файла
-        json historical_data = loadJsonData("../utils/binance_5m_candles.json");
-
-        if (!historical_data.is_array()) {
-            throw std::runtime_error("Invalid JSON data format");
-        }
-
-        // Заполняем стратегию данными из JSON
-        for (const auto& candle : historical_data) {
-            DataCSV data{
-                    candle["timestamp"].get<uint64_t>(),
-                    "BTCUSDT",
-                    candle["close"].get<double>(),
-                    candle["volume"].get<double>()
-            };
-            strategy.update(data);
-        }
-
-        cout << "Successfully loaded " << historical_data.size() << " historical candles from JSON file." << endl;
-
-        // Получаем последнюю цену для start_price
-        if (!historical_data.empty()) {
-            start_price = historical_data.back()["close"].get<double>();
-        }
-    } catch (const exception &e) {
-        cerr << "Error loading historical data: " << e.what() << endl;
-        return 1;
-    }
-
-    strategy.set_trade_callback([&](const string &action, double price) {
+                            oversold);
+    DataMACD_ST strategy_macd(macd_fast, macd_slow, macd_signal,
+                              200, 3.0, 10);
+    strategy_rsi_bb.set_trade_callback([&](const string &action, double price) {
         double quant;
         double balance;
         double min_order;
-        double percent;
+        double percent = 0.1;
 
         // Проверка баланса перед сделкой
-        if (action == "LONG_BUY" || action == "SHORT_BUY") {
+        if (action == "LONG_BUY") {
             balance = acc_manager.get_balance("USDT");
             min_order = min_price;
             if (balance < min_order) {
                 cout << "Insufficient USDT balance for " << action << endl;
                 return;
             }
+            quant = std::min(balance * percent, min_order);
         } else {
             balance = acc_manager.get_balance("BTC");
             min_order = min_price_btc;
@@ -143,16 +114,9 @@ int main() {
                 cout << "Insufficient BTC balance for " << action << endl;
                 return;
             }
+            quant = balance * percent;
         }
 
-        // Размер позиции
-        if (action.find("LONG") != string::npos) {
-            percent = 0.1; // 10% для длинной стратегии
-        } else {
-            percent = 0.05; // 5% для короткой стратегии
-        }
-
-        quant = std::min(balance * percent, min_order);
         quant = std::floor((action.find("BUY") != string::npos ?
                             (quant / price) / step_size : quant) / step_size) * step_size;
 
@@ -172,6 +136,94 @@ int main() {
             cerr << "Error adding order: " << e.what() << endl;
         }
     });
+    strategy_macd.set_trade_callback([&](const string &action, double price) {
+        double quant;
+        double balance;
+        double min_order;
+        double percent = 0.05; // 5% для стратегии MACD
+
+        if (action == "MACD_BUY") {
+            balance = acc_manager.get_balance("USDT");
+            min_order = min_price;
+            if (balance < min_order) {
+                cout << "Insufficient USDT balance for " << action << endl;
+                return;
+            }
+            quant = std::min(balance * percent, min_order);
+        } else {
+            balance = acc_manager.get_balance("BTC");
+            min_order = min_price_btc;
+            if (balance < min_order) {
+                cout << "Insufficient BTC balance for " << action << endl;
+                return;
+            }
+            quant = balance * percent;
+        }
+
+        double normalized_quant;
+        if (action.find("BUY") != string::npos) {
+
+            normalized_quant = (quant / price) / step_size;
+        } else {
+
+            normalized_quant = quant / step_size;
+        }
+
+        quant = std::floor(normalized_quant) * step_size;
+
+        if (quant <= 0) {
+            cout << "Calculated quantity is zero for " << action << endl;
+            return;
+        }
+
+        try {
+            order_manager.add_order(
+                    action.substr(action.find('_') + 1),
+                    "BTCUSDT",
+                    price,
+                    quant
+            );
+        } catch (const exception &e) {
+            cerr << "Error adding order: " << e.what() << endl;
+        }
+    });
+
+    try {
+        cout << "Loading historical data from JSON file..." << endl;
+
+        // Загрузка данных из JSON файла
+        json historical_data = loadJsonData("../utils/binance_30m_candles.json");
+
+        if (!historical_data.is_array()) {
+            throw std::runtime_error("Invalid JSON data format");
+        }
+
+        // Заполняем стратегию данными из JSON
+        for (const auto& candle : historical_data) {
+            DataCSV data{
+                    candle["timestamp"].get<uint64_t>(),
+                    candle["symbol"].get<string>(),
+                    candle["price"].get<double>(),
+                    candle["high"].get<double>(),   // добавлено
+                    candle["low"].get<double>(),    // добавлено
+                    candle["volume"].get<double>()
+            };
+
+            strategy_rsi_bb.update(data);
+            strategy_macd.update(data);
+        }
+
+        cout << "Successfully loaded " << historical_data.size() << " historical candles from JSON file." << endl;
+
+        // Получаем последнюю цену для start_price
+        if (!historical_data.empty()) {
+            start_price = historical_data.back()["price"].get<double>();
+        }
+    } catch (const exception &e) {
+        cerr << "Error loading historical data: " << e.what() << endl;
+        return 1;
+    }
+
 
 
 
@@ -198,10 +250,12 @@ int main() {
             try {
 
                 DataCSV event{
-                    data["E"].get<uint64_t>(), // timestamp
-                    data["s"].get<string>(), // symbol
-                    stod(data["k"]["c"].get<string>()), // price
-                    stod(data["k"]["v"].get<string>()) // volume
+                        data["E"].get<uint64_t>(),    // timestamp
+                        data["s"].get<string>(),      // symbol
+                        stod(data["k"]["c"].get<string>()),  // close price
+                        stod(data["k"]["h"].get<string>()),  // high
+                        stod(data["k"]["l"].get<string>()),  // low
+                        stod(data["k"]["v"].get<string>())   // volume
                 };
 
 
@@ -220,12 +274,14 @@ int main() {
 
                 // Вывод текущих значений индикаторов
                 double upper_bb, middle_bb, lower_bb;
-                strategy.get_bollinger_bands(upper_bb, middle_bb, lower_bb);
+                strategy_rsi_bb.get_bollinger_bands(upper_bb, middle_bb, lower_bb);
+                double macd_v, signal_v, histogram_v;
+                strategy_macd.get_macd(macd_v,signal_v,histogram_v);
 
                 cout << "====== Indicators " << std::put_time(&tm_info, "%F %T") << " ======" << endl;
                 // cout << "EMA Short: " << strategy.get_short_ema() << endl;
                 // cout << "EMA Long: " << strategy.get_long_ema() << endl;
-                cout << "RSI: " << strategy.get_rsi() << endl;
+                cout << "RSI: " << strategy_rsi_bb.get_rsi() << endl;
                 cout << "Bollinger Bands: " << upper_bb << " | "
                         << middle_bb << " | " << lower_bb << endl;
                 cout << "Current Price: " << event.price << "\n\n";
@@ -235,9 +291,9 @@ int main() {
                 {
                        lock_guard<std::mutex> lock(data_mutex);
                        data30_s.last_event = event;
-                       data30_s.macd = strategy.get_macd_mid();
-                       data30_s.macd_signal = strategy.get_macd_signal();
-                       data30_s.rsi = strategy.get_rsi();
+                       data30_s.macd = macd_v;
+                       data30_s.macd_signal = signal_v;
+                       data30_s.rsi = strategy_rsi_bb.get_rsi();
                        data30_s.upper_bb = upper_bb;
                        data30_s.lower_bb = lower_bb;
                        data30_s.middle_bb = middle_bb;
@@ -246,7 +302,9 @@ int main() {
 
 
 
-                strategy.update(event);
+                strategy_rsi_bb.update(event);
+                strategy_macd.update(event);
+
 
             } catch (const exception &e) {
                 cerr << "WS data error: " << e.what() << endl;
@@ -257,7 +315,7 @@ int main() {
 
 
     // Подключение WebSocket, Параметры свечи либо 24hours@Ticker
-    ws->connect("btcusdt@kline_5m");
+    ws->connect("btcusdt@kline_30m");
 
 
     // Поток Вебсокета

@@ -41,6 +41,8 @@ add_executable(trade_bot src/main.cpp
         headers/ERBB.h
         headers/DataBase.h
         src/DataBase.cpp
+        headers/MACDST.h
+        src/MACDST.cpp
 )
 
 target_include_directories(trade_bot PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/headers" )

@@ -10,6 +10,8 @@ struct DataCSV {
     uint64_t timestamp;
     string symbol;
     double price;
+    double high;
+    double low;
     double volume;
 };
 

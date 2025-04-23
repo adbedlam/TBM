@@ -2,23 +2,19 @@
 
 
 DataEMA_RSI_BB::DataEMA_RSI_BB(int rsi, int bb, double bb_dev,
-                               double overbought, double oversold,
-                               int macd_fast, int macd_slow, int macd_signal):
+                               double overbought, double oversold):
 
    rsi_window_(rsi),
    bb_window_(bb),
    bb_std_dev_(bb_dev),
    overbought_level_(overbought),
-   oversold_level_(oversold),
-   macd_fast_(macd_fast),
-   macd_slow_(macd_slow),
-   macd_signal_(macd_signal) {}
+   oversold_level_(oversold) {}
 
 void DataEMA_RSI_BB::update(DataCSV &data) {
     price = data.price;
     history_price_.push_back(data.price);
 
-    size_t max_history = std::max({bb_window_ + rsi_window_, macd_slow_ + macd_signal_}) * 2;
+    size_t max_history = bb_window_ + rsi_window_;
     if (history_price_.size() > max_history) {
         history_price_.pop_front();
     }
@@ -29,7 +25,6 @@ void DataEMA_RSI_BB::check_signal(const DataCSV &data) {
     std::lock_guard<std::mutex> lock(strategy_mutex_);
     auto now = std::chrono::system_clock::now();
 
-    // Cooldown 5 минут между сделками
     if (last_trade_time_ + std::chrono::minutes(5) > now) {
         return;
     }
@@ -38,37 +33,20 @@ void DataEMA_RSI_BB::check_signal(const DataCSV &data) {
     double upper_bb, middle_bb, lower_bb;
     calculate_bollinger_bands(upper_bb, middle_bb, lower_bb);
 
-    double macd, signal, histogram;
-    calculate_macd(macd, signal, histogram);
-
-    // Длинная стратегия
     if (price < lower_bb && rsi < oversold_level_ &&
-        last_trade_ != LastTrade::LONG_BUY && last_trade_ != LastTrade::SHORT_BUY) {
+        last_trade_ != LastTrade::LONG_BUY) {
         trade_callback("LONG_BUY", price);
         last_trade_ = LastTrade::LONG_BUY;
         last_trade_time_ = now;
     }
     else if (price > upper_bb && rsi > overbought_level_ &&
-             last_trade_ != LastTrade::LONG_SELL && last_trade_ != LastTrade::SHORT_SELL) {
+             last_trade_ != LastTrade::LONG_SELL) {
         trade_callback("LONG_SELL", price);
         last_trade_ = LastTrade::LONG_SELL;
         last_trade_time_ = now;
     }
-
-    // Короткая стратегия
-    if (histogram > 0 && macd > signal &&
-        last_trade_ != LastTrade::SHORT_BUY && last_trade_ != LastTrade::LONG_BUY) {
-        trade_callback("SHORT_BUY", price);
-        last_trade_ = LastTrade::SHORT_BUY;
-        last_trade_time_ = now;
-    }
-    else if (histogram < 0 && macd < signal &&
-             last_trade_ != LastTrade::SHORT_SELL && last_trade_ != LastTrade::LONG_SELL) {
-        trade_callback("SHORT_SELL", price);
-        last_trade_ = LastTrade::SHORT_SELL;
-        last_trade_time_ = now;
-    }
 }
+
 
 void DataEMA_RSI_BB::reset_trade_state() {
     std::lock_guard<std::mutex> lock(strategy_mutex_);
@@ -123,48 +101,5 @@ void DataEMA_RSI_BB::calculate_bollinger_bands(double &upper, double &middle, do
     lower = middle - bb_std_dev_ * stddev;
 }
 
-void DataEMA_RSI_BB::calculate_macd(double &macd, double &signal, double &histogram) {
 
-    if (history_price_.size() < macd_slow_ + macd_signal_) {
-        macd = signal = histogram = 0;
-        return;
-    }
-    // Вычисляем EMA для быстрой и медленной линии
-    double fast_ema = 0;
-    double slow_ema = 0;
-    double fast_mult = 2.0 / (macd_fast_ + 1);
-    double slow_mult = 2.0 / (macd_slow_ + 1);
-
-    fast_ema = history_price_.back();
-    slow_ema = history_price_.back();
-
-    for (size_t i = history_price_.size() - 2, j = 0; j < macd_slow_; --i, ++j) {
-        if (j < macd_fast_) {
-            fast_ema = (history_price_[i] - fast_ema) * fast_mult + fast_ema;
-        }
-        slow_ema = (history_price_[i] - slow_ema) * slow_mult + slow_ema;
-    }
-
-    macd = fast_ema - slow_ema;
-
-    // Вычисляем сигнальную линию (EMA от MACD)
-    if (macd_line_.size() < macd_signal_) {
-        macd_line_.push_back(macd);
-        signal = macd;
-    } else {
-        signal = signal_line_.back();
-        signal = (macd - signal) * (2.0 / (macd_signal_ + 1)) + signal;
-    }
-
-    histogram = macd - signal;
-
-    // Сохраняем значения для следующего расчета
-    macd_line_.push_back(macd);
-    signal_line_.push_back(signal);
-
-    if (macd_line_.size() > macd_signal_ * 2) {
-        macd_line_.pop_front();
-        signal_line_.pop_front();
-    }
-}
 
