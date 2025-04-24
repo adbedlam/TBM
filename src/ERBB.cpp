@@ -19,7 +19,9 @@ void DataEMA_RSI_BB::update(DataCSV &data) {
         history_price_.pop_front();
     }
 
-    check_signal(data);
+    if (history_price_.size() == bb_window_ + rsi_window_){
+        check_signal(data);
+    }
 }
 void DataEMA_RSI_BB::check_signal(const DataCSV &data) {
     std::lock_guard<std::mutex> lock(strategy_mutex_);

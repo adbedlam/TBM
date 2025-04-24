@@ -20,6 +20,8 @@ int main() {
     signal(SIGTERM, signal_handler);
 
 
+    bool wait = true;
+
     // Параметры для Ордера Бинанс
     double min_price = 10.0;
 
@@ -53,7 +55,7 @@ int main() {
 
 
     // Инициализация БД-логера
-    const string db_name = "T_B_database";
+    const string db_name = "TBM";
     const string db_user = "postgres";
     const string db_host = "localhost";
     const string db_port = "5432";
@@ -90,8 +92,12 @@ int main() {
     DataEMA_RSI_BB strategy_rsi_bb(rsi_period, bb_period,
                             bb_std_dev, overbought,
                             oversold);
+
+
     DataMACD_ST strategy_macd(macd_fast, macd_slow, macd_signal,
-                              200, 3.0, 10);
+                              ema_long, 3.0, 10);
+
+
     strategy_rsi_bb.set_trade_callback([&](const string &action, double price) {
         double quant;
         double balance;
@@ -136,6 +142,8 @@ int main() {
             cerr << "Error adding order: " << e.what() << endl;
         }
     });
+
+
     strategy_macd.set_trade_callback([&](const string &action, double price) {
         double quant;
         double balance;
@@ -215,6 +223,7 @@ int main() {
 
         cout << "Successfully loaded " << historical_data.size() << " historical candles from JSON file." << endl;
 
+
         // Получаем последнюю цену для start_price
         if (!historical_data.empty()) {
             start_price = historical_data.back()["price"].get<double>();
@@ -223,7 +232,6 @@ int main() {
         cerr << "Error loading historical data: " << e.what() << endl;
         return 1;
     }
-
 
 
 
@@ -278,7 +286,8 @@ int main() {
                 double macd_v, signal_v, histogram_v;
                 strategy_macd.get_macd(macd_v,signal_v,histogram_v);
 
-                cout << "====== Indicators " << std::put_time(&tm_info, "%F %T") << " ======" << endl;
+
+                cout << "====== Indicators " << std::put_time(&tm_info, "%F %T") << " ======" << "\n\n";
                 // cout << "EMA Short: " << strategy.get_short_ema() << endl;
                 // cout << "EMA Long: " << strategy.get_long_ema() << endl;
                 cout << "RSI: " << strategy_rsi_bb.get_rsi() << endl;
@@ -344,10 +353,10 @@ int main() {
                cerr << "Error convert time, Status" << endl;
             }
 
-            cout << "====== Status "<< std::put_time(&tm_info, "%F %T") << " ======" << endl;
-            cout << "Total profit: " << acc_manager.get_profit(total_balance) << " USDT" << endl;
-            cout << "Active orders: " << order_manager.queue_size() << endl;
-            cout << "Current balance:" << endl;
+            cout << "====== Status "<< std::put_time(&tm_info, "%F %T") << " ======" << "\n\n";
+            cout << "Total profit: " << acc_manager.get_profit(total_balance) << " USDT" << "\n";
+            cout << "Active orders: " << order_manager.queue_size() << "\n";
+            cout << "Current balance:" << "\n";
             cout << "BTC: " << acc_manager.get_balance("BTC") << " | USDT: "
                     << acc_manager.get_balance("USDT") << "\n\n";
 

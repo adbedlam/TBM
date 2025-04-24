@@ -25,9 +25,11 @@ void DataMACD_ST::update(DataCSV &data) {
         close_prices_.pop_front();
         history_price_.pop_front();
     }
+    if (high_prices_.size() == ema_long_) {
+        calculate_supertrend();
+        check_signal(data);
+    }
 
-    calculate_supertrend();
-    check_signal(data);
 }
 
 double DataMACD_ST::calculate_atr(int period) {

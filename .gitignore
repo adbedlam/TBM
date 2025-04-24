@@ -64,7 +64,7 @@ doxygen/
 docs/html/
 docs/latex/
 
-
+*.json
 *.log
 *.cache
 *.tmp
