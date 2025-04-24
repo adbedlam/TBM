@@ -258,8 +258,8 @@ int main() {
             try {
 
                 DataCSV event{
-                        data["E"].get<uint64_t>(),    // timestamp
-                        data["s"].get<string>(),      // symbol
+                        data["E"].get<uint64_t>(),              // timestamp
+                        data["s"].get<string>(),                // symbol
                         stod(data["k"]["c"].get<string>()),  // close price
                         stod(data["k"]["h"].get<string>()),  // high
                         stod(data["k"]["l"].get<string>()),  // low
@@ -283,16 +283,15 @@ int main() {
                 // Вывод текущих значений индикаторов
                 double upper_bb, middle_bb, lower_bb;
                 strategy_rsi_bb.get_bollinger_bands(upper_bb, middle_bb, lower_bb);
+
                 double macd_v, signal_v, histogram_v;
                 strategy_macd.get_macd(macd_v,signal_v,histogram_v);
 
 
                 cout << "====== Indicators " << std::put_time(&tm_info, "%F %T") << " ======" << "\n\n";
-                // cout << "EMA Short: " << strategy.get_short_ema() << endl;
-                // cout << "EMA Long: " << strategy.get_long_ema() << endl;
-                cout << "RSI: " << strategy_rsi_bb.get_rsi() << endl;
+                cout << "RSI: " << strategy_rsi_bb.get_rsi() << "\n";
                 cout << "Bollinger Bands: " << upper_bb << " | "
-                        << middle_bb << " | " << lower_bb << endl;
+                        << middle_bb << " | " << lower_bb << "\n";
                 cout << "Current Price: " << event.price << "\n\n";
 
 
