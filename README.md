@@ -82,7 +82,7 @@ ___
 ** Примичание
 
 - Используется компилятор MSVS, DCMAKE установить путь на vcpkg
-- -DCMAKE_TOOLCHAIN_FILE=path/to/vcpkg/scripts/buildsystems/vcpkg.cmake
+- -DCMAKE_TOOLCHAIN_FILE=path/to/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static
 
 ___
 
