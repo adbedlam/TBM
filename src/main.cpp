@@ -112,7 +112,7 @@ int main() {
                 cout << "Insufficient USDT balance for " << action << endl;
                 return;
             }
-            quant = std::min(balance * percent, min_order);
+            quant = std::max(balance * percent, min_order);
         } else {
             balance = acc_manager.get_balance("BTC");
             min_order = min_price_btc;
