@@ -25,7 +25,7 @@ private:
     void create_tables_if_missing(pqxx::connection& c) {
         pqxx::work txn(c);
 
-        //txn.exec("DO $$BEGIN IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'TBM') THEN CREATE DATABASE TBM;END IF;END $$");
+        txn.exec("DO $$BEGIN IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'TBM') THEN CREATE DATABASE TBM;END IF;END $$");
 
     
         txn.exec(

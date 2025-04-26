@@ -43,6 +43,8 @@ add_executable(trade_bot src/main.cpp
         src/DataBase.cpp
         headers/MACDST.h
         src/MACDST.cpp
+        src/AbstractStrategy.cpp
+        headers/AbstractStrategy.h
 )
 
 target_include_directories(trade_bot PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/headers" )

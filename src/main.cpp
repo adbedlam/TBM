@@ -30,18 +30,21 @@ int main() {
     double step_size = 0.001;
 
 
-    // Параметры стратегии, ПОДУМАТЬ
+    // Параметры стратегии
     auto rsi_period = 14 * 48; // * 24 * 360 * 1000;
-    auto bb_period = 20 * 48; //* 24 * 360 * 1000;
-
-    auto bb_std_dev = 2.0;
     auto overbought = 70.0;
     auto oversold = 30.0;
+
+
+    auto bb_period = 20 * 48; //* 24 * 360 * 1000;
+    auto bb_std_dev = 2.0;
+
 
     auto macd_fast = 12 * 48;
     auto macd_slow = 26 * 48;
     auto macd_signal = 9 * 48;
     auto ema_long = 200 * 48;
+
 
     // Считывание API ключей
     const auto api_keys = loadConf("../utils/.env");
@@ -59,6 +62,7 @@ int main() {
     const string db_user = "postgres";
     const string db_host = "localhost";
     const string db_port = "5432";
+
 
     const string init_db_conn = "dbname="+db_name + " user=" + db_user + " password=" + db_password +
                                 " host="+db_host + " port=" + db_port;

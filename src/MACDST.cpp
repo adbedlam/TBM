@@ -30,6 +30,7 @@ void DataMACD_ST::update(DataCSV &data) {
         check_signal(data);
     }
 
+
 }
 
 double DataMACD_ST::calculate_atr(int period) {
