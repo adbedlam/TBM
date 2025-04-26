@@ -10,7 +10,7 @@
 struct Data30s {
     DataCSV last_event;
     double macd = 0;
-    double macd_signal = 0;
+    double signal = 0;
     double rsi = 0;
     double upper_bb = 0;
     double lower_bb = 0;
@@ -32,7 +32,7 @@ private:
             "CREATE TABLE IF NOT EXISTS indicators ("
             "id SERIAL PRIMARY KEY,"
             "macd DOUBLE PRECISION NOT NULL,"
-            "macd_signal DOUBLE PRECISION NOT NULL,"
+            "signal DOUBLE PRECISION NOT NULL,"
             "rsi DOUBLE PRECISION NOT NULL,"
             "upper_band DOUBLE PRECISION NOT NULL,"
             "lower_band DOUBLE PRECISION NOT NULL,"
@@ -80,7 +80,7 @@ private:
 
             conn.prepare(
                 "insert_indicators",
-                "INSERT INTO indicators (macd, macd_signal, rsi, upper_band, lower_band, middle_band, price, timestamp) "
+                "INSERT INTO indicators (macd, signal, rsi, upper_band, lower_band, middle_band, price, timestamp) "
                 "VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"
             );
 
@@ -119,7 +119,7 @@ public:
 
     void log_data(const DataCSV &data);
 
-    void log_data(const double &sema, const double &lema, const double &rsi,
+    void log_data(const double &macd, const double &signal, const double &rsi,
                   const double &Bbands_u, const double &Bbands_l,
                   const double &Bbands_m, const double &price, uint64_t &time);
 

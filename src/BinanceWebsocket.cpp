@@ -92,7 +92,7 @@ void Websocket::on_message(function<void(const json &)> callback) {
         callback(data);
 
 
-        if (data.contains("e") && data["e"] == "24hrTicker") {
+        if (data.contains("e") && data["e"] == "btcusdt@kline_30m") {
             DataCSV event{
                 data["E"].get<uint64_t>(),
                 data["s"].get<std::string>(),

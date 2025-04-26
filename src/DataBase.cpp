@@ -20,7 +20,7 @@ void DataBaseLog::log_data(const DataCSV &data) {
     }
 }
 
-void DataBaseLog::log_data(const double &sema, const double &lema, const double &rsi,
+void DataBaseLog::log_data(const double &macd, const double &signal, const double &rsi,
                            const double &Bbands_u, const double &Bbands_l,
                            const double &Bbands_m, const double &price, uint64_t &time)
 {
@@ -30,7 +30,7 @@ void DataBaseLog::log_data(const double &sema, const double &lema, const double 
 
         txn.exec_prepared(
             "insert_indicators",
-            sema, lema, rsi,
+            macd, signal, rsi,
             Bbands_u, Bbands_l, Bbands_m,
             price, time
         );

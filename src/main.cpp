@@ -55,7 +55,7 @@ int main() {
 
 
     // Инициализация БД-логера
-    const string db_name = "TBM";
+    const string db_name = "T_B_database";
     const string db_user = "postgres";
     const string db_host = "localhost";
     const string db_port = "5432";
@@ -223,7 +223,6 @@ int main() {
 
         cout << "Successfully loaded " << historical_data.size() << " historical candles from JSON file." << endl;
 
-
         // Получаем последнюю цену для start_price
         if (!historical_data.empty()) {
             start_price = historical_data.back()["price"].get<double>();
@@ -292,6 +291,8 @@ int main() {
                 cout << "RSI: " << strategy_rsi_bb.get_rsi() << "\n";
                 cout << "Bollinger Bands: " << upper_bb << " | "
                         << middle_bb << " | " << lower_bb << "\n";
+                cout << "MACD: " << macd_v << "\n";
+                cout << "Signal : " << signal_v << "\n";
                 cout << "Current Price: " << event.price << "\n\n";
 
 
@@ -300,7 +301,7 @@ int main() {
                        lock_guard<std::mutex> lock(data_mutex);
                        data30_s.last_event = event;
                        data30_s.macd = macd_v;
-                       data30_s.macd_signal = signal_v;
+                       data30_s.signal = signal_v;
                        data30_s.rsi = strategy_rsi_bb.get_rsi();
                        data30_s.upper_bb = upper_bb;
                        data30_s.lower_bb = lower_bb;
@@ -329,6 +330,7 @@ int main() {
     // Поток Вебсокета
     thread ws_thread([&ioc]() {
         while (running) {
+            std::this_thread::sleep_for(60s);
             try {
                 ioc.run();
             } catch (const exception &e) {
@@ -338,6 +340,7 @@ int main() {
             }
         }
     });
+
     double total_balance = (start_price * base_val_btc) + base_val_usdt;
 
 
@@ -367,7 +370,7 @@ int main() {
     // Поток для логирования данных (индикаторы, исторические), каждые 30с
     thread db_log_data_thread([&]() {
         while (running) {
-           std::this_thread::sleep_for(305s);
+           std::this_thread::sleep_for(1805s);
 
            Data30s local_data;
            {
@@ -382,7 +385,7 @@ int main() {
 
                logger.log_data(
                    local_data.macd,
-                   local_data.macd_signal,
+                   local_data.signal,
                    local_data.rsi,
                    local_data.upper_bb,
                    local_data.lower_bb,

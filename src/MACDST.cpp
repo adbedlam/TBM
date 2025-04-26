@@ -117,38 +117,31 @@ void DataMACD_ST::calculate_macd(double &macd, double &signal, double &histogram
         return;
     }
 
-    double fast_ema = 0;
-    double slow_ema = 0;
+    double fast_ema = history_price_[0];
     double fast_mult = 2.0 / (macd_fast_ + 1);
+    for (size_t i = 1; i < history_price_.size(); ++i){
+        fast_ema = (history_price_[i] - fast_ema) * fast_mult + fast_ema;
+    }
+
+    double slow_ema = history_price_[0];
     double slow_mult = 2.0 / (macd_slow_ + 1);
-
-    fast_ema = history_price_.back();
-    slow_ema = history_price_.back();
-
-    for (size_t i = history_price_.size() - 2, j = 0; j < macd_slow_; --i, ++j) {
-        if (j < macd_fast_) {
-            fast_ema = (history_price_[i] - fast_ema) * fast_mult + fast_ema;
-        }
+    for (size_t i = 1; i < history_price_.size(); ++i){
         slow_ema = (history_price_[i] - slow_ema) * slow_mult + slow_ema;
     }
 
     macd = fast_ema - slow_ema;
 
-    if (macd_line_.size() < macd_signal_) {
-        macd_line_.push_back(macd);
+    if (signal_line_.empty()){
         signal = macd;
     } else {
-        signal = signal_line_.back();
-        signal = (macd - signal) * (2.0 / (macd_signal_ + 1)) + signal;
+        double signal_mult = 2.0 / (macd_signal_ + 1);
+        signal = (macd - signal_line_.back()) * signal_mult + signal_line_.back();
     }
-
     histogram = macd - signal;
 
-    macd_line_.push_back(macd);
     signal_line_.push_back(signal);
 
-    if (macd_line_.size() > macd_signal_ * 2) {
-        macd_line_.pop_front();
+    if ( signal_line_.size() > 100 ) {
         signal_line_.pop_front();
     }
 }

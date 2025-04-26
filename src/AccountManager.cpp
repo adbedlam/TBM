@@ -74,6 +74,8 @@ double AccountManager::get_balance(const std::string &asset) {
 double AccountManager::get_profit(const double &total_base_wallet) {
     double current_wallet = get_balance("USDT") + get_balance("BTC") * order_price;
 
+    if (order_price == 0) return 0;
+
     if ((current_wallet - total_base_wallet) > 0) {
         return current_wallet - total_base_wallet;
     } else {
