@@ -68,7 +68,7 @@ int main() {
 
 
     // Инициализация БД-логера
-    const string db_name = "TBM";
+    const string db_name = "T_B_database";
     const string db_user = "postgres";
     const string db_host = "localhost";
     const string db_port = "5432";
@@ -214,14 +214,14 @@ int main() {
         cout << "Loading historical data from JSON file..." << endl;
 
         // Загрузка данных из JSON файла
-        json historical_data = loadJsonData("../utils/binance_15m_candles.json");
+        json klines =  binance_api.get_historical_klines("BTC", "15m", 200);
 
         // if (!historical_data.is_array()) {
         //     throw std::runtime_error("Invalid JSON data format");
         // }
 
         // Заполняем стратегию данными из JSON
-        for (const auto& candle : historical_data) {
+        for (const auto& candle : klines) {
             Candle data{
                     candle["timestamp"].get<uint64_t>(),
                     candle["symbol"].get<string>(),
@@ -238,11 +238,11 @@ int main() {
 
         }
 
-        cout << "Successfully loaded " << historical_data.size() << " historical candles from JSON file." << endl;
+        cout << "Successfully loaded " << klines.size() << " historical candles from JSON file." << endl;
 
         // Получаем последнюю цену для start_price
-        if (!historical_data.empty()) {
-            start_price = historical_data.back()["price"].get<double>();
+        if (!klines.empty()) {
+            start_price = klines.back()["price"].get<double>();
         }
     } catch (const exception &e) {
         cerr << "Error loading historical data: " << e.what() << endl;

@@ -42,9 +42,7 @@ public:
     json get_historical_klines(
             const std::string &symbol,
             const std::string &interval,
-            int limit,
-            int64_t start_time = 0,
-            int64_t end_time = 0
+            int limit
     );
 };
 

@@ -41,24 +41,31 @@ string BinanceAPIc::sign_request(const string &query) {
 json BinanceAPIc::get_historical_klines(
         const std::string &symbol,
         const std::string &interval,
-        int limit,
-        int64_t start_time,
-        int64_t end_time
+        int limit
 ) {
-    std::map<std::string, std::string> params = {
-            {"symbol", symbol},
+    map<string, string> params = {
+            {"symbol", symbol + "USDT"},
             {"interval", interval},
-            {"limit", std::to_string(limit)},
+            {"limit", to_string(limit)}
     };
+    json klines = http_request("GET", "/api/v3/klines", params, true);
 
-    if (start_time > 0) {
-        params["startTime"] = std::to_string(start_time);
-    }
-    if (end_time > 0) {
-        params["endTime"] = std::to_string(end_time);
-    }
+    json result = json::array();
 
-    return http_request("GET", "/api/v3/klines", params, true);
+    for (const auto& kline : klines) {
+        if (kline.size() < 12) continue;
+
+        json candle = {
+                {"timestamp", kline[0].get<uint64_t>()},
+                {"symbol", symbol + "USDT"},
+                {"high", stod(kline[2].get<string>())},
+                {"low", stod(kline[3].get<string>())},
+                {"price", stod(kline[4].get<string>())},
+                {"volume", stod(kline[5].get<string>())}
+        };
+        result.push_back(candle);
+    }
+    return result;
 }
 
 json BinanceAPIc::http_request(const string &method, const string &endpoint, const map<string, string> &params,
