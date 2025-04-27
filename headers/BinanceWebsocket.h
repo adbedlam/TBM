@@ -1,7 +1,7 @@
 #ifndef BINANCEWEBSOCKET_H
 #define BINANCEWEBSOCKET_H
 #include "common.hpp"
-#include "strategy.h"
+
 
 
 namespace beast = boost::beast;
@@ -38,7 +38,7 @@ private:
 
     function<void(const json &)> callback_;
 
-    DataSMA data_sma_calc;
+
 
 
     void on_resolve(beast::error_code ec, tcp::resolver::results_type results);

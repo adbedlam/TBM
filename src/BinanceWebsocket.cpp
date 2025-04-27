@@ -1,5 +1,7 @@
 #include "BinanceWebsocket.h"
 
+#include "INDICATORS/AbstractStrategy.h"
+
 // Private method
 void Websocket::on_resolve(beast::error_code ec, tcp::resolver::results_type results) {
     if (ec) {
@@ -91,20 +93,5 @@ void Websocket::on_message(function<void(const json &)> callback) {
 
         callback(data);
 
-
-        if (data.contains("e") && data["e"] == "btcusdt@kline_30m") {
-            DataCSV event{
-                data["E"].get<uint64_t>(),
-                data["s"].get<std::string>(),
-                std::stod(data["c"].get<std::string>()),
-                std::stod(data["q"].get<std::string>())
-            };
-
-
-            data_sma_calc.update(event);
-
-
-
-        }
     };
 }

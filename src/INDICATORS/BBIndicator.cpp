@@ -1,0 +1,44 @@
+//
+// Created by nikit on 27.04.2025.
+//
+#include "INDICATORS/BBIndicator.h"
+
+BollingerBandsIndicator::BollingerBandsIndicator(int period) {
+    this->period = period;
+    sum_ = 0.0;
+}
+
+void BollingerBandsIndicator::update(const Candle &candle) {
+    window.push_back(candle.price);
+    sum_ += candle.price;
+
+    if (window.size() > period) {
+        sum_ -= window.front();
+        window.pop_front();
+    }
+}
+
+BBValues BollingerBandsIndicator::get_bands() const {
+    if (window.empty()) {
+        return  {0.0, 0.0, 0.0};
+    }
+
+    double mean = sum_ / window.size();
+    double variance = 0.0;
+    const auto sample = window.size();
+
+    for (const auto& price : window) {
+        variance += (price - mean) * (price - mean);
+    }
+    variance /= sample;
+
+    double stddev = std::sqrt(variance);
+
+    return {mean - (multiplier * stddev), mean, mean +( multiplier * stddev)};
+}
+
+double BollingerBandsIndicator::get_value() {
+    return get_bands().bb_mid;
+}
+
+

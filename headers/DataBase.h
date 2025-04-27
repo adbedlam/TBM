@@ -5,10 +5,11 @@
 #ifndef DATABASE_H
 #define DATABASE_H
 #include "common.hpp"
-#include "strategy.h"
+
+#include "INDICATORS/AbstractStrategy.h"
 
 struct Data30s {
-    DataCSV last_event;
+    Candle last_event;
     double macd = 0;
     double signal = 0;
     double rsi = 0;
@@ -117,7 +118,7 @@ public:
         }
     }
 
-    void log_data(const DataCSV &data);
+    void log_data(const Candle &data);
 
     void log_data(const double &macd, const double &signal, const double &rsi,
                   const double &Bbands_u, const double &Bbands_l,

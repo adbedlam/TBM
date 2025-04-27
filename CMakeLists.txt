@@ -25,26 +25,23 @@ add_executable(trade_bot src/main.cpp
         headers/BinanceWebsocket.h
         src/BinanceWebsocket.cpp
         headers/common.hpp
-        src/strategy.cpp
-        headers/strategy.h
         headers/BinanceAPI.h
         src/BinanceAPI.cpp
         headers/AccountManager.h
-        headers/AccountManager.h
         src/AccountManager.cpp
-        src/AccountManager.cpp
-        headers/OrderManager.h
         headers/OrderManager.h
         src/OrderManager.cpp
-        headers/OrderManager.h
-        src/ERBB.cpp
-        headers/ERBB.h
         headers/DataBase.h
         src/DataBase.cpp
-        headers/MACDST.h
-        src/MACDST.cpp
-        src/AbstractStrategy.cpp
-        headers/AbstractStrategy.h
+        headers/INDICATORS/AbstractStrategy.h
+        headers/INDICATORS/EMAIndicator.h
+        headers/INDICATORS/RSIIndicator.h
+        headers/INDICATORS/BBIndicator.h
+        headers/INDICATORS/MACDIndicator.h
+        src/INDICATORS/EMAIndicator.cpp
+        src/INDICATORS/RSIIndicator.cpp
+        src/INDICATORS/BBIndicator.cpp
+        src/INDICATORS/MACDIndicator.cpp
 )
 
 target_include_directories(trade_bot PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/headers" )

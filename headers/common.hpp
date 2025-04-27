@@ -29,6 +29,7 @@
 #include <functional>
 #include <numeric>
 #include <ctime>
+#include <time.h>
 #include <utility>
 
 #include <boost/beast/core.hpp>

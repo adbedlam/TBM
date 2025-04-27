@@ -1,6 +1,6 @@
 #include "DataBase.h"
 
-void DataBaseLog::log_data(const DataCSV &data) {
+void DataBaseLog::log_data(const Candle &data) {
     try {
         pqxx::work txn(conn);  // Используем объект соединения
 
