@@ -18,7 +18,7 @@ void signal_handler(int signum) {
 }
 
 
-
+// Структура хранящая индикаторы для каждой пары
 struct SymbolData {
     EMAIndicator ema200;
     RSIIndicator rsi;
@@ -30,7 +30,7 @@ struct SymbolData {
     ema200(ema_p), rsi(rsi_p), bb(bb_p), macd(macd_s, macd_l, macd_sig){}
 };
 
-
+// Логирование данных
 struct LoggedData {
     string symbol;
     double macd;
@@ -51,8 +51,6 @@ int main() {
     signal(SIGTERM, signal_handler);
 
 
-    bool wait = true;
-
     // Параметры для Ордера Бинанс
     double min_price = 10.0;
 
@@ -61,18 +59,19 @@ int main() {
     double step_size = 0.001;
 
     // Параметры стратегии
-    auto rsi_period = 14;// * 48; // * 24 * 360 * 1000;
 
+    // RSI
+    auto rsi_period = 14;
 
+    // BB
+    auto bb_period = 20;
 
-    auto bb_period = 20; //* 24 * 360 * 1000;
-
-
+    // MACD
     auto macd_fast = 12;
     auto macd_slow = 26;
     auto macd_signal = 9;
 
-
+    // EMA
     auto ema_long = 200;
 
 
@@ -80,6 +79,8 @@ int main() {
     // Валюты по которым вести торги
     const std::vector<string> symbols = {"BTC", "ETH", "LTC", "BNB"};
 
+
+    //Создание Объектов индикаторов, для каждой пары
     std::unordered_map<string, SymbolData> symbol_data;
 
     for (const auto& symbol : symbols) {
@@ -96,10 +97,6 @@ int main() {
             )
         );
     }
-
-
-
-    //Индикаторы
 
 
     // Считывание API ключей
@@ -125,8 +122,6 @@ int main() {
 
     DataBaseLog logger(init_db_conn);
 
-    mutex data_mutex;
-
 
     // Инициализация API
     BinanceAPIc binance_api(API, SECRET);
@@ -139,12 +134,6 @@ int main() {
 
     acc_manager.start();
     order_manager.start();
-
-
-    double start_price{0};
-    // double base_val_btc = acc_manager.get_balance("BTC");
-    // const double base_val_usdt = acc_manager.get_balance("USDT");
-
 
 
     try {
@@ -223,10 +212,6 @@ int main() {
                 };
 
 
-                if (start_price == 0) {
-                    start_price = event.price;
-                }
-
                 auto now = system_clock::now();
                 time_t tt = system_clock::to_time_t(now);
 
@@ -283,6 +268,9 @@ int main() {
         }
     });
 
+
+    // Подключение WebSocket, Параметры свечи либо 24hours@Ticker
+    // Создание всех EndPoint
     string streams;
 
     for (int i = 0; i < symbols.size(); ++i) {
@@ -293,10 +281,10 @@ int main() {
         for (auto& c : s) {
             c = tolower(c);
         }
-        streams += s + "usdt@kline_15m";
+        streams += s + "usdt@kline_15m"; // Параметры свечи
     }
 
-    // Подключение WebSocket, Параметры свечи либо 24hours@Ticker
+
     ws->connect(streams);
 
 
@@ -314,7 +302,6 @@ int main() {
         }
     });
 
-    // double total_balance = (start_price * base_val_btc) + base_val_usdt;
 
 
     // Поток мониторинга и создания ордеров
