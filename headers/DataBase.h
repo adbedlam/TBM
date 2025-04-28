@@ -8,16 +8,7 @@
 
 #include "INDICATORS/AbstractStrategy.h"
 
-struct Data30s {
-    Candle last_event;
-    double macd = 0;
-    double signal = 0;
-    double rsi = 0;
-    double upper_bb = 0;
-    double lower_bb = 0;
-    double middle_bb = 0;
-    bool has_data = false;
-};
+
 
 class DataBaseLog {
 private:
@@ -32,6 +23,7 @@ private:
         txn.exec(
             "CREATE TABLE IF NOT EXISTS indicators ("
             "id SERIAL PRIMARY KEY,"
+            "symbols VARCHAR(10) NOT NULL,"
             "macd DOUBLE PRECISION NOT NULL,"
             "signal DOUBLE PRECISION NOT NULL,"
             "rsi DOUBLE PRECISION NOT NULL,"
@@ -81,8 +73,8 @@ private:
 
             conn.prepare(
                 "insert_indicators",
-                "INSERT INTO indicators (macd, signal, rsi, upper_band, lower_band, middle_band, price, timestamp) "
-                "VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"
+                "INSERT INTO indicators (symbols, macd, signal, rsi, upper_band, lower_band, middle_band, price, timestamp) "
+                "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"
             );
 
             conn.prepare(
@@ -120,9 +112,9 @@ public:
 
     void log_data(const Candle &data);
 
-    void log_data(const double &macd, const double &signal, const double &rsi,
+    void log_data(const string& symbols, const double &macd, const double &signal, const double &rsi,
                   const double &Bbands_u, const double &Bbands_l,
-                  const double &Bbands_m, const double &price, uint64_t &time);
+                  const double &Bbands_m, const double &price, const uint64_t &time);
 
     void log_data(uint64_t &timestamp, string &action, string &symbol, double &quant, double &price, double &commision);
 };

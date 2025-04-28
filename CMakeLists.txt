@@ -42,6 +42,8 @@ add_executable(trade_bot src/main.cpp
         src/INDICATORS/RSIIndicator.cpp
         src/INDICATORS/BBIndicator.cpp
         src/INDICATORS/MACDIndicator.cpp
+        src/AnalysisHandler.cpp
+        headers/AnalysisHandler.h
 )
 
 target_include_directories(trade_bot PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/headers" )
