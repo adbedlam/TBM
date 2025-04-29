@@ -122,3 +122,36 @@ bool AnalysisHandler::is_cooldown() const {
         auto now = std::chrono::system_clock::now();
         return duration_cast<std::chrono::seconds>(now - last_signal_time).count() < 300;
 }
+
+
+void AnalysisHandler::open_position(double price, double quantity) {
+    position_opened = true;
+    entry_price = price;
+    entry_quantity = quantity;
+}
+
+void AnalysisHandler::close_position(double exit_price) {
+    if(position_opened) {
+        double profit = (exit_price - entry_price) * entry_quantity;
+        double profit_percent = ((exit_price - entry_price)/entry_price) * 100;
+
+        total_profit += profit;
+        total_profit_percent += profit_percent;
+
+        position_opened = false;
+        entry_price = 0.0;
+        entry_quantity = 0.0;
+    }
+}
+
+double AnalysisHandler::get_total_profit() const {
+    return total_profit;
+}
+
+double AnalysisHandler::get_total_profit_percent() const {
+    return total_profit_percent;
+}
+
+double AnalysisHandler::get_entry_quantity() const {
+    return entry_quantity;
+}

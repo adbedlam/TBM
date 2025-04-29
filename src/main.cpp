@@ -270,7 +270,6 @@ int main() {
                         risk_percent = 5.0;
                     }
 
-                    quantity = (usdt_balance * risk_percent / 100) /price;
 
                     quantity = std::max(quantity, 0.001);
 
@@ -278,13 +277,23 @@ int main() {
 
                     if (signal_type.find("BUY") != string::npos) {
                         action = "BUY";
+                        quantity = (usdt_balance * risk_percent / 100) / price;
                     }
                     else {
                         action = "SELL";
+                        quantity = indicator_by_symbol.at(sym).get_entry_quantity();
                     }
 
                     order_manager.add_order(action, sym+"USDT", event.price, quantity);
                     cout << "Current Action: " << action << "\n\n";
+
+
+                    if (action == "BUY") {
+                        indicator_by_symbol.at(sym).open_position(event.price, quantity);
+                    }
+                    else if (action == "SELL") {
+                        indicator_by_symbol.at(sym).close_position(event.price);
+                    }
 
                 }
 
@@ -295,6 +304,10 @@ int main() {
                 cout << "MACD: " << st.macd.get_macd().macd << "\n";
                 cout << "Signal : " << st.macd.get_macd().signal << "\n";
                 cout << "Current Price: " << event.price << "\n\n";
+                cout << "PROFIT for " << sym << ": \n";
+                cout << sym <<": " << acc_manager.get_balance(sym) << " | USDT: " << acc_manager.get_balance("USDT") << "\n";
+                cout <<  indicator_by_symbol.at(sym).get_total_profit() << "  USDT "<< indicator_by_symbol.at(sym).get_total_profit_percent() << "\n\n";
+
 
 
                 {

@@ -26,6 +26,11 @@ private:
 
     bool buy = true;
 
+    bool position_opened;
+    double entry_price;
+    double entry_quantity;
+    double total_profit;
+    double total_profit_percent;
 
     double cur_price{0};
 
@@ -54,6 +59,12 @@ public:
 
     bool is_cooldown() const;
 
+    void open_position(double price, double quantity);
+    void close_position(double exit_price);
+
+    double get_total_profit() const;
+    double get_total_profit_percent() const;
+    double get_entry_quantity() const;
 
 };
 
