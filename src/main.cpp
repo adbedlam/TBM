@@ -80,7 +80,7 @@ int main() {
 
 
     // Валюты по которым вести торги
-    const std::vector<string> symbols = {"XRP", "LTC", "ADA", "TRX", "BNB"};
+    const std::vector<string> symbols = {"XRP", "LTC", "ADA", "TRX", "TON"};
 
 
     //Создание Объектов индикаторов, для каждой пары
@@ -195,7 +195,7 @@ int main() {
 
     // Инициализация WebSocket
     net::io_context ioc;
-    ssl::context ctx{ssl::context::tlsv13_client};
+    ssl::context ctx{ssl::context::tls_client};
     ctx.set_default_verify_paths();
     ctx.set_verify_mode(ssl::verify_peer);
     ctx.load_verify_file(path_to_cacert);
@@ -212,22 +212,22 @@ int main() {
     ws->on_message([&](const json &data) {
         if (!running) return;
 
-        if (data.contains("e") && data["e"] == "kline") {
+        if (data.contains("data") && data["data"].contains("e") && data["data"]["e"] == "kline") {
             try {
 
-                string full = data["s"].get<string>();
+                string full = data["data"]["s"].get<string>();
                 string sym  = full.substr(0, full.size()-4);
 
                 auto it = symbol_data.find(sym);
                 auto& ind = indicator_by_symbol.at(sym);
 
                 Candle event{
-                        data["E"].get<uint64_t>(),              // timestamp
-                        data["s"].get<string>(),                // symbol
-                        stod(data["k"]["c"].get<string>()),  // close price
-                        stod(data["k"]["h"].get<string>()),  // high
-                        stod(data["k"]["l"].get<string>()),  // low
-                        stod(data["k"]["v"].get<string>())   // volume
+                        data["data"]["E"].get<uint64_t>(),              // timestamp
+                        data["data"]["s"].get<string>(),                // symbol
+                        stod(data["data"]["k"]["c"].get<string>()),  // close price
+                        stod(data["data"]["k"]["h"].get<string>()),  // high
+                        stod(data["data"]["k"]["l"].get<string>()),  // low
+                        stod(data["data"]["k"]["v"].get<string>())   // volume
                 };
 
 
@@ -266,23 +266,21 @@ int main() {
 
                     double price = symbol_data.at(sym).last_price;
 
-                    if (signal_type.find("LONG") != string::npos) {
-                        risk_percent = 5.0;
-                    }
-
-
-                    quantity = std::max(quantity, 0.001);
-
                     string action;
 
                     if (signal_type.find("BUY") != string::npos) {
                         action = "BUY";
                         quantity = (usdt_balance * risk_percent / 100) / price;
+
                     }
                     else {
                         action = "SELL";
                         quantity = indicator_by_symbol.at(sym).get_entry_quantity();
                     }
+
+                    quantity = floor(quantity/step_size) * step_size;
+                    quantity = std::max(quantity, 0.001);
+
 
                     order_manager.add_order(action, sym+"USDT", event.price, quantity);
                     cout << "Current Action: " << action << "\n\n";
@@ -306,7 +304,7 @@ int main() {
                 cout << "Current Price: " << event.price << "\n\n";
                 cout << "PROFIT for " << sym << ": \n";
                 cout << sym <<": " << acc_manager.get_balance(sym) << " | USDT: " << acc_manager.get_balance("USDT") << "\n";
-                cout <<  indicator_by_symbol.at(sym).get_total_profit() << "  USDT "<< indicator_by_symbol.at(sym).get_total_profit_percent() << "\n\n";
+                cout <<  indicator_by_symbol.at(sym).get_total_profit() << "  USDT "<< indicator_by_symbol.at(sym).get_total_profit_percent() << "% \n\n";
 
 
 

@@ -11,6 +11,7 @@ void Websocket::on_resolve(beast::error_code ec, tcp::resolver::results_type res
     beast::get_lowest_layer(ws_).async_connect(results,
                                                   beast::bind_front_handler(
                                                   &Websocket::on_connect, shared_from_this()));
+    cout<<"ON RESOLVE" << endl;
 }
 
 
@@ -23,9 +24,15 @@ void Websocket::on_connect(beast::error_code ec, tcp::resolver::results_type::en
         beast::error_code ec{static_cast<int>(::ERR_get_error()), net::error::get_ssl_category()};
         return fail(ec, "SNI setup failed");
     }
+
+
+
+
     ws_.next_layer().async_handshake(ssl::stream_base::client,
                                      beast::bind_front_handler(
                                          &Websocket::on_ssl_handshake, shared_from_this()));
+
+    cout<<"ON Conncect" << endl;
 }
 
 
@@ -38,6 +45,9 @@ void Websocket::on_ssl_handshake(beast::error_code ec) {
 
     ws_.async_handshake(host_, endpoint_, beast::bind_front_handler(
                             &Websocket::on_handshake, shared_from_this()));
+
+    cout<<"ON SSL handsahke" << endl;
+
 }
 
 
@@ -46,6 +56,7 @@ void Websocket::on_handshake(beast::error_code ec) {
         return fail(ec, "on handshake");
     }
     read_f();
+    cout << "on handSahke" << endl;
 }
 
 void Websocket::read_f() {
@@ -77,8 +88,11 @@ void Websocket::fail(beast::error_code ec, char const *ew) {
 
 // Public method
 void Websocket::connect(const string &stream_type) {
-    host_ = "testnet.binance.vision";
-    endpoint_ = "/ws/" + stream_type;
+    // host_ = "testnet.binance.vision";
+    host_ = "stream.binance.com";
+    // endpoint_ = "/ws/" + stream_type;
+    cout << stream_type << endl ;
+    endpoint_ = "/stream?streams=" + stream_type;
 
     resolver_.async_resolve(host_,
                             "443",
@@ -92,6 +106,7 @@ void Websocket::on_message(function<void(const json &)> callback) {
     callback_ = [this, callback](const json& data) {
 
         callback(data);
+
 
     };
 }
