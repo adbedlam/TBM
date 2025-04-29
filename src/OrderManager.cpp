@@ -33,6 +33,7 @@ void OrderManager::process_orders() {
 
                     double commission = 0.0;
                     if (!response["fills"].empty()) {
+                        cout << "Make order";
                         auto& fill = response["fills"][0];
                         if (fill.contains("commission") && !fill["commission"].is_null()) {
                             if (fill["commission"].is_string()) {

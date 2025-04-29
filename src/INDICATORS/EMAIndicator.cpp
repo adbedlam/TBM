@@ -18,4 +18,3 @@ double EMAIndicator::get_value() {
     return ema;
 }
 
-// Реализации конструкторов и операторов остаются без изменений

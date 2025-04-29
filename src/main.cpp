@@ -6,6 +6,7 @@
 #include "INDICATORS/EMAIndicator.h"
 #include "INDICATORS/RSIIndicator.h"
 #include "INDICATORS/MACDIndicator.h"
+#include "AnalysisHandler.h"
 
 
 using json = nlohmann::json;
@@ -43,6 +44,7 @@ struct LoggedData {
     uint64_t timestamp;
 };
 
+
 unordered_map<string, LoggedData> last_indicators;
 mutex indicators_mutex;
 
@@ -55,6 +57,7 @@ int main() {
     double min_price = 10.0;
 
     double min_price_btc = 0.001;
+    double quantity = 0.001;
 
     double step_size = 0.001;
 
@@ -77,11 +80,12 @@ int main() {
 
 
     // Валюты по которым вести торги
-    const std::vector<string> symbols = {"ETH", "LTC", "BNB"};
+    const std::vector<string> symbols = {"XRP", "LTC", "ADA", "TRX", "BNB"};
 
 
     //Создание Объектов индикаторов, для каждой пары
     std::unordered_map<string, SymbolData> symbol_data;
+    std::unordered_map<string, AnalysisHandler> indicator_by_symbol;
 
     for (const auto& symbol : symbols) {
         symbol_data.emplace(
@@ -94,6 +98,13 @@ int main() {
             macd_fast,
             macd_slow,
             macd_signal
+            )
+        );
+        indicator_by_symbol.emplace(
+            std::piecewise_construct,
+            std::forward_as_tuple(symbol),
+            std::forward_as_tuple(
+            quantity
             )
         );
     }
@@ -144,6 +155,8 @@ int main() {
             json klines =  binance_api.get_historical_klines(coin, "15m", 200);
 
             auto& st = symbol_data.at(coin);
+            auto& ind = indicator_by_symbol.at(coin);
+
             // Заполняем стратегию данными из JSON
             for (const auto& candle : klines) {
                 Candle data{
@@ -159,6 +172,11 @@ int main() {
                 st.rsi.update(data);
                 st.bb.update(data);
                 st.macd.update(data);
+
+                ind.set_params(st.rsi.get_value(), st.bb.get_bands().bb_up,
+                                  st.bb.get_bands().bb_low, st.bb.get_bands().bb_mid,
+                                  st.macd.get_macd().macd, st.macd.get_macd().signal,
+                                  st.ema200.get_value(), data.price);
             }
 
             cout << "Successfully loaded " << klines.size() << " historical candles from Binance." << "\n\n";
@@ -201,6 +219,7 @@ int main() {
                 string sym  = full.substr(0, full.size()-4);
 
                 auto it = symbol_data.find(sym);
+                auto& ind = indicator_by_symbol.at(sym);
 
                 Candle event{
                         data["E"].get<uint64_t>(),              // timestamp
@@ -230,6 +249,44 @@ int main() {
                 st.bb.update(event);
                 st.macd.update(event);
                 st.last_price = event.price;
+
+
+                ind.set_params(st.rsi.get_value(), st.bb.get_bands().bb_up,
+                                 st.bb.get_bands().bb_low, st.bb.get_bands().bb_mid,
+                                 st.macd.get_macd().macd, st.macd.get_macd().signal,
+                                 st.ema200.get_value(), event.price);
+
+                auto [has_signal, signal_type] = ind.check_signal();
+
+                if (has_signal) {
+
+                    double risk_percent = 3.0;
+
+                    double usdt_balance = acc_manager.get_balance("USDT");
+
+                    double price = symbol_data.at(sym).last_price;
+
+                    if (signal_type.find("LONG") != string::npos) {
+                        risk_percent = 5.0;
+                    }
+
+                    quantity = (usdt_balance * risk_percent / 100) /price;
+
+                    quantity = std::max(quantity, 0.001);
+
+                    string action;
+
+                    if (signal_type.find("BUY") != string::npos) {
+                        action = "BUY";
+                    }
+                    else {
+                        action = "SELL";
+                    }
+
+                    order_manager.add_order(action, sym+"USDT", event.price, quantity);
+                    cout << "Current Action: " << action << "\n\n";
+
+                }
 
                 cout << "====== Indicators for "<< sym << " "<< std::put_time(&tm_info, "%F %T") << " ======" << "\n\n";
                 cout << "RSI: " << st.rsi.get_value() << "\n";
@@ -315,13 +372,14 @@ int main() {
                cerr << "Error convert time, Status" << endl;
             }
 
+
             cout << "====== Status "<< std::put_time(&tm_info, "%F %T") << " ======" << "\n\n";
-            // cout << "Total profit: " << acc_manager.get_profit(total_balance) << " USDT" << "\n";
             cout << "Active orders: " << order_manager.queue_size() << "\n";
             cout << "Current balance:" << "\n";
             for (const auto sym : symbols){
             cout <<sym << ": " << acc_manager.get_balance(sym) << " | USDT: "
                     << acc_manager.get_balance("USDT") << "\n\n";
+
             }
             std::this_thread::sleep_for(2s);
         }
