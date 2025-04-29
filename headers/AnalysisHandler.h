@@ -14,10 +14,12 @@ private:
     double quantity{0.001};
 
     double rsi{0};
-
+    bool supertrend{0};
     double bb_up{0};
     double bb_low{0};
     double bb_mean{0};
+    double min_compare{0};
+    double ATR{0};
 
     double macd{0};
     double macd_signal{0};
@@ -48,14 +50,16 @@ private:
 public:
     explicit AnalysisHandler(const double& quant);
 
-    void set_params(const double& rsi, const double& bb_up, const double& bb_low,
+   /* void set_params(const double& rsi, const double& bb_up, const double& bb_low,
+                    const double& bb_mean, const double& macd, const double& macd_signal, const double& ema, const double& price);*/
+    void set_params(const bool& supertrend,const double& ATR, const double& bb_up, const double& bb_low,
                     const double& bb_mean, const double& macd, const double& macd_signal, const double& ema, const double& price);
 
     std::pair<bool, std::string> check_signal();
 
 
-    std::pair<bool, std::string> check_long_term_strategy();
-    std::pair<bool, std::string> check_short_term_strategy();
+    std::pair<bool, std::string> check_macd_ATR_bb_strategy();
+    std::pair<bool, std::string> check_macd_ema_supertrend_strategy();
 
     bool is_cooldown() const;
 

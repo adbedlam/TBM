@@ -44,6 +44,8 @@ add_executable(trade_bot src/main.cpp
         src/INDICATORS/MACDIndicator.cpp
         src/AnalysisHandler.cpp
         headers/AnalysisHandler.h
+        headers/INDICATORS/Supertrend.h
+        src/INDICATORS/Supertrend.cpp
 )
 
 target_include_directories(trade_bot PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/headers" )

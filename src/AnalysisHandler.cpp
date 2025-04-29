@@ -6,15 +6,18 @@
 
 AnalysisHandler::AnalysisHandler(const double &quant) : quantity(quant){}
 
-void AnalysisHandler::set_params(const double& rsi, const double& bb_up, const double& bb_low,
+/*void AnalysisHandler::set_params(const double& rsi, const double& bb_up, const double& bb_low,
                     const double& bb_mean, const double& macd, const double& macd_signal, const double& ema,
-                    const double& price){
-
+                    const double& price){*/
+void AnalysisHandler::set_params(const bool& supertrend,const double& ATR, const double& bb_up, const double& bb_low,
+                                 const double& bb_mean, const double& macd, const double& macd_signal, const double& ema,
+                                 const double& price) {
     cur_price = price;
 
-    this->prev_rsi = this->rsi;
-    this->rsi = rsi;
-
+/*    this->prev_rsi = this->rsi;
+    this->rsi = rsi;*/
+    this->ATR = ATR;
+    this->supertrend = supertrend;
     this->bb_up = bb_up;
     this->bb_low = bb_low;
     this->bb_mean = bb_mean;
@@ -39,79 +42,52 @@ std::pair<bool, std::string> AnalysisHandler::check_signal() {
         return {false, "COOLDOWN"};
     }
 
-    std::pair<bool, std::string> long_term_signal = check_long_term_strategy();
-    std::pair<bool, std::string> short_term_signal = check_short_term_strategy();
+    std::pair<bool, std::string> strategy_1 = check_macd_ATR_bb_strategy();
+    std::pair<bool, std::string> strategy_2 = check_macd_ema_supertrend_strategy();
 
-    if (long_term_signal.first) {
+    if (strategy_1.first) {
         last_signal_time = std::chrono::system_clock::now();
-        return {true, long_term_signal.second};
+        return {true, strategy_1.second};
     }
 
-    if (short_term_signal.first) {
+    if (strategy_2.first) {
         last_signal_time = std::chrono::system_clock::now();
-        return {true, short_term_signal.second};
+        return {true, strategy_2.second};
     }
 
     return {false, "NO_SIGNAL"};
 }
 
 
-std::pair<bool, std::string>  AnalysisHandler::check_long_term_strategy() {
+std::pair<bool, std::string>  AnalysisHandler::check_macd_ATR_bb_strategy() {
 
     std::list<double> price_history;
 
     price_history.push_back(cur_price);
 
     // TODO надо сделать дни
-    // Возрастающий тренд Бычок
-    if (cur_price > ema200 && price_history.size() >= 14 * 96) {
-        bool trend_up = std::all_of(price_history.begin(), price_history.end(),
-            [this](double p) { return p > ema200; });
+    if (cur_price <= bb_low && ATR > min_compare && prev_macd_hist < 0 && macd_hist > 0 )
+        return {true, "STRATEGY_1_SELL"};
 
-        bool near_bb_low = cur_price <= bb_low * 1.01;
-        bool rsi_status = rsi >= 40 && rsi <= 50;
-        bool macd_cross = macd > macd_signal && prev_macd_hist <= 0;
-
-        if (trend_up && near_bb_low && rsi_status && macd_cross) {
-            return {true, "LONG_BUY"};
-        }
-    }
-
-    // Убывающий тренд Мишка
-    if (cur_price < ema200 && price_history.size() >= 14) {
-        bool trend_down = std::all_of(price_history.begin(), price_history.end(),
-            [this](double p) { return p < ema200; });
-
-        bool near_bb_high = cur_price >= bb_up * 0.99;
-        bool rsi_status = rsi >= 50 && rsi <= 60;
-        bool macd_cross = macd < macd_signal && prev_macd_hist >= 0;
-
-        if (trend_down && near_bb_high && rsi_status && macd_cross) {
-            return {true, "LONG_SELL"};
-        }
-    }
+    if (cur_price >- bb_up && ATR > min_compare && prev_macd_hist > 0 && macd_hist < 0)
+        return {true, "STRATEGY_1_BUY"};
 
     return {false, ""};
-
 }
 
-std::pair<bool, std::string> AnalysisHandler::check_short_term_strategy() {
-    double bb_width = bb_up - bb_low;
-    bool bb_squeeze = (bb_width / cur_price) < bb_threshold;
+std::pair<bool, std::string> AnalysisHandler::check_macd_ema_supertrend_strategy() {
+
+    int trend = 0;
 
     // Возрастающий тренд Бычок
-    if (bb_squeeze && cur_price > ema200) {
-        bool rsi_bullish = (prev_rsi < 30 && rsi >= 30);
-        bool macd_bullish = (macd_hist > 0 && prev_macd_hist <= 0);
-        if (rsi_bullish && macd_bullish) return {true, "SHORT_BUY"};
-    }
-
-    // Убывающий тренд Мишка
-    if (bb_squeeze && cur_price < ema200) {
-        bool rsi_bearish = (prev_rsi > 70 && rsi <= 70);
-        bool macd_bearish = (macd_hist < 0 && prev_macd_hist >= 0);
-        if (rsi_bearish && macd_bearish) return {true, "SHORT_SELL"};
-    }
+    if (prev_macd_hist < 0 && macd_hist > 0)
+        trend = 1;
+    if (trend == 1 && cur_price > ema200 && supertrend == true)
+        return {true, "STRATEGY_2_BUY"};
+    if (prev_macd_hist > 0 && macd_hist < 0)
+        trend = 2;
+    if (trend == 2 && cur_price < ema200 && supertrend == false)
+        return {true, "STRATEGY_2_SELL"};
 
     return {false, ""};
 
