@@ -6,6 +6,7 @@
 #include "INDICATORS/EMAIndicator.h"
 #include "INDICATORS/RSIIndicator.h"
 #include "INDICATORS/MACDIndicator.h"
+#include "INDICATORS/Supertrend.h"
 #include "AnalysisHandler.h"
 
 
@@ -22,13 +23,17 @@ void signal_handler(int signum) {
 // Структура хранящая индикаторы для каждой пары
 struct SymbolData {
     EMAIndicator ema200;
-    RSIIndicator rsi;
+    //RSIIndicator rsi;
     BollingerBandsIndicator bb;
     MACDIndicator macd;
+    Supertrend supertrend;
     double last_price;
 
-    SymbolData(int ema_p, int rsi_p, int bb_p, int macd_s, int macd_l, int macd_sig) :
-    ema200(ema_p), rsi(rsi_p), bb(bb_p), macd(macd_s, macd_l, macd_sig){}
+    SymbolData(int ema_p, int bb_p, int macd_s, int macd_l, int macd_sig, int supertrend_p) :
+            ema200(ema_p), bb(bb_p), macd(macd_s, macd_l, macd_sig), supertrend(supertrend_p){}
+
+   /* SymbolData(int ema_p, int rsi_p, int bb_p, int macd_s, int macd_l, int macd_sig, int supertrend_p) :
+    ema200(ema_p), rsi(rsi_p), bb(bb_p), macd(macd_s, macd_l, macd_sig), supertrend(supertrend_p){} */
 };
 
 // Логирование данных
@@ -36,11 +41,13 @@ struct LoggedData {
     string symbol;
     double macd;
     double macd_s;
-    double rsi;
+    //double rsi;
+    double ATR;
     double bb_up;
     double bb_low;
     double bb_mid;
     double price;
+    bool supertrend;
     uint64_t timestamp;
 };
 
@@ -77,6 +84,9 @@ int main() {
     // EMA
     auto ema_long = 200;
 
+    auto supertrend_period = 14;
+
+
 
 
     // Валюты по которым вести торги
@@ -93,11 +103,12 @@ int main() {
             std::forward_as_tuple(symbol),
             std::forward_as_tuple(
             ema_long,
-            rsi_period,
+            //rsi_period,
             bb_period,
             macd_fast,
             macd_slow,
-            macd_signal
+            macd_signal,
+            supertrend_period
             )
         );
         indicator_by_symbol.emplace(
@@ -122,7 +133,7 @@ int main() {
 
 
     // Инициализация БД-логера
-    const string db_name = "TBM";
+    const string db_name = "T_B_database";
     const string db_user = "postgres";
     const string db_host = "localhost";
     const string db_port = "5432";
@@ -169,11 +180,12 @@ int main() {
             };
                 logger.log_data(data);
                 st.ema200.update(data);
-                st.rsi.update(data);
+                //st.rsi.update(data);
                 st.bb.update(data);
                 st.macd.update(data);
+                st.supertrend.update(data);
 
-                ind.set_params(st.rsi.get_value(), st.bb.get_bands().bb_up,
+                ind.set_params(st.supertrend.get_trend(), st.supertrend.get_value(), st.bb.get_bands().bb_up,
                                   st.bb.get_bands().bb_low, st.bb.get_bands().bb_mid,
                                   st.macd.get_macd().macd, st.macd.get_macd().signal,
                                   st.ema200.get_value(), data.price);
@@ -245,13 +257,13 @@ int main() {
 
                 auto &st = it->second;
                 st.ema200.update(event);
-                st.rsi.update(event);
+                //st.rsi.update(event);
                 st.bb.update(event);
                 st.macd.update(event);
                 st.last_price = event.price;
 
 
-                ind.set_params(st.rsi.get_value(), st.bb.get_bands().bb_up,
+                ind.set_params(st.supertrend.get_trend(),st.supertrend.get_value(), st.bb.get_bands().bb_up,
                                  st.bb.get_bands().bb_low, st.bb.get_bands().bb_mid,
                                  st.macd.get_macd().macd, st.macd.get_macd().signal,
                                  st.ema200.get_value(), event.price);
@@ -296,7 +308,9 @@ int main() {
                 }
 
                 cout << "====== Indicators for "<< sym << " "<< std::put_time(&tm_info, "%F %T") << " ======" << "\n\n";
-                cout << "RSI: " << st.rsi.get_value() << "\n";
+                //cout << "RSI: " << st.rsi.get_value() << "\n";
+                cout << "ATR" << st.supertrend.get_value() << "\n";
+                cout << "Supertrend" << st.supertrend.get_trend() << "\n";
                 cout << "Bollinger Bands: " << st.bb.get_bands().bb_up << " | "
                               << st.bb.get_bands().bb_mid << " | " << st.bb.get_bands().bb_low << "\n";
                 cout << "MACD: " << st.macd.get_macd().macd << "\n";
@@ -314,12 +328,14 @@ int main() {
                         LoggedData time_log_data;
 
                         time_log_data.symbol = sym;
-                        time_log_data.rsi = st.rsi.get_value();
+                        //time_log_data.rsi = st.rsi.get_value();
                         time_log_data.bb_up = st.bb.get_bands().bb_up;
                         time_log_data.bb_mid = st.bb.get_bands().bb_mid;
                         time_log_data.bb_low = st.bb.get_bands().bb_low;
                         time_log_data.macd = st.macd.get_macd().macd;
                         time_log_data.macd_s = st.macd.get_macd().signal;
+                        time_log_data.supertrend = st.supertrend.get_trend();
+                        time_log_data.ATR = st.supertrend.get_value();
                         time_log_data.price = event.price;
                         time_log_data.timestamp = event.timestamp;
 
@@ -415,7 +431,8 @@ int main() {
                        symbol,
                        data.macd,
                        data.macd_s,
-                       data.rsi,
+                       data.supertrend,
+                       data.ATR,
                        data.bb_up,
                        data.bb_low,
                        data.bb_mid,

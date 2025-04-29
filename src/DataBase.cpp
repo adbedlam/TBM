@@ -21,7 +21,7 @@ void DataBaseLog::log_data(const Candle &data) {
     }
 }
 
-void DataBaseLog::log_data(const string& symbols, const double &macd, const double &signal, const double &rsi,
+void DataBaseLog::log_data(const string& symbols, const double &macd, const double &signal, const bool &supertrend, const double &ATR,
                            const double &Bbands_u, const double &Bbands_l,
                            const double &Bbands_m, const double &price, const uint64_t &time)
 {
@@ -31,7 +31,7 @@ void DataBaseLog::log_data(const string& symbols, const double &macd, const doub
 
         txn.exec_prepared(
             "insert_indicators",
-            symbols, macd, signal, rsi, Bbands_u, Bbands_l, Bbands_m, price, time
+            symbols, macd, signal, supertrend, ATR, Bbands_u, Bbands_l, Bbands_m, price, time
         );
         txn.commit();
     }

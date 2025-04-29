@@ -26,7 +26,7 @@ public:
     Supertrend(int period);
     void update(const Candle &candle) override;
     void bands ();
-    bool get_trend(const Candle &candle);
+    bool get_trend();
     double get_value() override;
 };
 #endif //TRADE_BOT_SUPERTREND_H

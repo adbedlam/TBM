@@ -73,8 +73,8 @@ private:
 
             conn.prepare(
                 "insert_indicators",
-                "INSERT INTO indicators (symbols, macd, signal, rsi, upper_band, lower_band, middle_band, price, timestamp) "
-                "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"
+                "INSERT INTO indicators (symbols, macd, signal, supertrend, ATR, upper_band, lower_band, middle_band, price, timestamp) "
+                "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"
             );
 
             conn.prepare(
@@ -112,7 +112,7 @@ public:
 
     void log_data(const Candle &data);
 
-    void log_data(const string& symbols, const double &macd, const double &signal, const double &rsi,
+    void log_data(const string& symbols, const double &macd, const double &signal, const bool &supertrend, const double &ATR,
                   const double &Bbands_u, const double &Bbands_l,
                   const double &Bbands_m, const double &price, const uint64_t &time);
 

@@ -33,8 +33,7 @@ void Supertrend::update(const Candle &candle){
        lower_band = ((high + low) / 2) - (mult * ATR);
    }
 }
-bool Supertrend::get_trend(const Candle &candle){
-    close = candle.price;
+bool Supertrend::get_trend(){
     if (close > prev_upper_band) return true;
     return false;
 }
