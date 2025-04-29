@@ -77,7 +77,7 @@ int main() {
 
 
     // Валюты по которым вести торги
-    const std::vector<string> symbols = {"BTC", "ETH", "LTC", "BNB"};
+    const std::vector<string> symbols = {"ETH", "LTC", "BNB"};
 
 
     //Создание Объектов индикаторов, для каждой пары
