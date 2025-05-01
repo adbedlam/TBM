@@ -17,7 +17,7 @@ private:
     void create_tables_if_missing(pqxx::connection& c) {
         pqxx::work txn(c);
 
-        txn.exec("DO $$BEGIN IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'T_B_database') THEN CREATE DATABASE T_B_database;END IF;END $$");
+        txn.exec("DO $$BEGIN IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'TBM') THEN CREATE DATABASE TBM;END IF;END $$");
 
     
         txn.exec(
@@ -43,7 +43,8 @@ private:
             "symbol VARCHAR(16) NOT NULL,"
             "quantity DOUBLE PRECISION NOT NULL,"
             "price DOUBLE PRECISION NOT NULL,"
-            "commission DOUBLE PRECISION NOT NULL)"
+            "commission DOUBLE PRECISION NOT NULL,"
+            "indicator VARCHAR(16) NOT NULL)"
         );
 
         txn.exec(
@@ -80,8 +81,8 @@ private:
 
             conn.prepare(
                 "insert_transactions",
-                "INSERT INTO transactions (timestamp, action, symbol, quantity, price, commission) "
-                "VALUES ($1, $2, $3, $4, $5, $6)"
+                "INSERT INTO transactions (timestamp, action, symbol, quantity, price, commission, indicator) "
+                "VALUES ($1, $2, $3, $4, $5, $6, $7)"
             );
 
             statements_prepared = true;
@@ -117,7 +118,7 @@ public:
                   const double &Bbands_u, const double &Bbands_l,
                   const double &Bbands_m, const double &price, const uint64_t &time);
 
-    void log_data(uint64_t &timestamp, string &action, string &symbol, double &quant, double &price, double &commision);
+    void log_data(uint64_t &timestamp, string &action, string &symbol, double &quant, double &price, double &commision, string& strategy);
 };
 
 #endif //DATABASE_H

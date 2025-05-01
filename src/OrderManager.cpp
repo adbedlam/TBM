@@ -44,7 +44,7 @@ void OrderManager::process_orders() {
                         }
                     }
 
-                    logger.log_data(timestamp, order.action, order.symbol, order.quant, order.price, commission);
+                    logger.log_data(timestamp, order.action, order.symbol, order.quant, order.price, commission, strategy);
 
 
 
@@ -52,7 +52,7 @@ void OrderManager::process_orders() {
                 } catch (const std::exception &e) {
                     cerr << "FAIL: " << e.what() << endl;
                 }
-            } //          << order.price << ","
+            }
 
         }
 
@@ -76,10 +76,11 @@ void OrderManager::stop() {
     }
 }
 
-void OrderManager::add_order(const string &action, const string &symbol, double price, double quant) {
+void OrderManager::add_order(const string& action, const string& symbol,const double& price,const double& quant, const string& strategy) {
     std::lock_guard<mutex> lock(mutex_ord);
     cout << action << " " << quant << endl;
     order_q.push({action, symbol, price, quant});
+    this->strategy = strategy;
 }
 
 

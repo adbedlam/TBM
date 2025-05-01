@@ -133,7 +133,7 @@ int main() {
 
 
     // Инициализация БД-логера
-    const string db_name = "T_B_database";
+    const string db_name = "TBM";
     const string db_user = "postgres";
     const string db_host = "localhost";
     const string db_port = "5432";
@@ -260,8 +260,9 @@ int main() {
                 //st.rsi.update(event);
                 st.bb.update(event);
                 st.macd.update(event);
-                st.last_price = event.price;
+                st.supertrend.update(event);
 
+                st.last_price = event.price;
 
                 ind.set_params(st.supertrend.get_trend(),st.supertrend.get_value(), st.bb.get_bands().bb_up,
                                  st.bb.get_bands().bb_low, st.bb.get_bands().bb_mid,
@@ -294,16 +295,16 @@ int main() {
                     quantity = std::max(quantity, 0.001);
 
 
-                    order_manager.add_order(action, sym+"USDT", event.price, quantity);
+                    order_manager.add_order(action, sym+"USDT", event.price, quantity, signal_type.substr(0,10));
                     cout << "Current Action: " << action << "\n\n";
 
 
-                    if (action == "BUY") {
-                        indicator_by_symbol.at(sym).open_position(event.price, quantity);
-                    }
-                    else if (action == "SELL") {
-                        indicator_by_symbol.at(sym).close_position(event.price);
-                    }
+                    // if (action == "BUY") {
+                    //     indicator_by_symbol.at(sym).open_position(event.price, quantity);
+                    // }
+                    // else if (action == "SELL") {
+                    //     indicator_by_symbol.at(sym).close_position(event.price);
+                    // }
 
                 }
 
@@ -318,7 +319,7 @@ int main() {
                 cout << "Current Price: " << event.price << "\n\n";
                 cout << "PROFIT for " << sym << ": \n";
                 cout << sym <<": " << acc_manager.get_balance(sym) << " | USDT: " << acc_manager.get_balance("USDT") << "\n";
-                cout <<  indicator_by_symbol.at(sym).get_total_profit() << "  USDT "<< indicator_by_symbol.at(sym).get_total_profit_percent() << "% \n\n";
+                // cout <<  indicator_by_symbol.at(sym).get_total_profit() << "  USDT "<< indicator_by_symbol.at(sym).get_total_profit_percent() << "% \n\n";
 
 
 
@@ -408,7 +409,7 @@ int main() {
                     << acc_manager.get_balance("USDT") << "\n\n";
 
             }
-            std::this_thread::sleep_for(2s);
+            std::this_thread::sleep_for(300s);
         }
     });
 
@@ -416,7 +417,7 @@ int main() {
     // Поток для логирования данных (индикаторы, исторические), каждые 30с
     thread db_log_data_thread([&]() {
         while (running) {
-           std::this_thread::sleep_for(30s);
+           std::this_thread::sleep_for(150s);
 
 
 

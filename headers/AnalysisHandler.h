@@ -13,6 +13,8 @@ class AnalysisHandler {
 private:
     double quantity{0.001};
 
+    double prev_ATR{0.0};
+
     double rsi{0};
     bool supertrend{0};
     double bb_up{0};

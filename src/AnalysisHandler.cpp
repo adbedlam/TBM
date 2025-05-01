@@ -65,12 +65,11 @@ std::pair<bool, std::string>  AnalysisHandler::check_macd_ATR_bb_strategy() {
 
     price_history.push_back(cur_price);
 
-    // TODO надо сделать дни
-    if (cur_price <= bb_low && ATR > min_compare && prev_macd_hist < 0 && macd_hist > 0 )
-        return {true, "STRATEGY_1_SELL"};
-
-    if (cur_price >- bb_up && ATR > min_compare && prev_macd_hist > 0 && macd_hist < 0)
+    if ((cur_price <= bb_low) && (ATR > prev_ATR) && (prev_macd_hist < macd_hist) && (macd_hist < 0))
         return {true, "STRATEGY_1_BUY"};
+
+    if ((cur_price >= bb_up) && (ATR > prev_ATR) && (prev_macd_hist > macd_hist) && (macd_hist > 0))
+        return {true, "STRATEGY_1_SELL"};
 
     return {false, ""};
 }
@@ -79,14 +78,13 @@ std::pair<bool, std::string> AnalysisHandler::check_macd_ema_supertrend_strategy
 
     int trend = 0;
 
-    // Возрастающий тренд Бычок
-    if (prev_macd_hist < 0 && macd_hist > 0)
+    if ((prev_macd_hist < 0) && (macd_hist >= 0))
         trend = 1;
-    if (trend == 1 && cur_price > ema200 && supertrend == true)
+    if ((trend == 1) && (cur_price > ema200) && (supertrend))
         return {true, "STRATEGY_2_BUY"};
-    if (prev_macd_hist > 0 && macd_hist < 0)
+    if ((prev_macd_hist > 0) && (macd_hist <= 0))
         trend = 2;
-    if (trend == 2 && cur_price < ema200 && supertrend == false)
+    if ((trend == 2) && (cur_price < ema200) && (supertrend == false))
         return {true, "STRATEGY_2_SELL"};
 
     return {false, ""};

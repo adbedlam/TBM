@@ -16,7 +16,7 @@ void Supertrend::update(const Candle &candle){
     low = candle.low;
     prev_close = close;
     close = candle.price;
-    TR = std::max({high - low, high - prev_close, low - prev_close});
+    TR = std::max({high - low, std::abs(high - prev_close), std::abs(low - prev_close)});
 
     window.push_back(TR);
     sum_ += TR;
@@ -27,10 +27,10 @@ void Supertrend::update(const Candle &candle){
     }
 
    if (window.size() == period){
+       prev_ATR = ATR;
        ATR = sum_ / period;
        prev_upper_band = upper_band;
        upper_band = ((high + low) / 2) + (mult * ATR);
-       lower_band = ((high + low) / 2) - (mult * ATR);
    }
 }
 bool Supertrend::get_trend(){

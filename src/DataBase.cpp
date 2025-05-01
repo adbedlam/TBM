@@ -41,7 +41,7 @@ void DataBaseLog::log_data(const string& symbols, const double &macd, const doub
     }
 }
 
-void DataBaseLog::log_data(uint64_t &timestamp, string &action, string &symbol, double &quant, double &price, double &commision)
+void DataBaseLog::log_data(uint64_t &timestamp, string &action, string &symbol, double &quant, double &price, double &commision, string& strategy)
 
 {
     try {
@@ -55,7 +55,8 @@ void DataBaseLog::log_data(uint64_t &timestamp, string &action, string &symbol, 
             symbol,
             quant,
             price,
-            commision
+            commision,
+            strategy
         );
         txn.commit();
     }

@@ -44,6 +44,8 @@ private:
 
     void process_orders();
 
+    string strategy{};
+
 public:
     OrderManager(BinanceAPIc& api, AccountManager& acc_mgr, DataBaseLog& log, int rate_lim): Api(api), Acc(acc_mgr) ,oreder_rate(rate_lim), logger(log) {}
 
@@ -51,7 +53,7 @@ public:
 
     void stop();
 
-    void add_order(const string& action, const string& symbol, double price, double quant);
+    void add_order(const string& action, const string& symbol,const double& price,const double& quant, const string& strategy);
 
     size_t queue_size();
 };
