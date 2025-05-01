@@ -36,7 +36,7 @@ void AccountManager::process_order(const json &order) {
         const std::string side = order["side"];
         quote_qty = std::stod(order["cummulativeQuoteQty"].get<std::string>());
         double commission = 0.0;
-        std::cout << order.dump(2);
+        std::cout << order.dump(2) << "\n\n";
         return;
         order_price = std::stod(order["price"].get<std::string>());
 

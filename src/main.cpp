@@ -306,9 +306,6 @@ int main() {
 
                     step_size = indicator_by_symbol.at(sym).get_step_size();
 
-                    quantity = floor(quantity/step_size) * step_size;
-
-
                     auto min_q = indicator_by_symbol.at(sym).get_min_notional() / event.price;
 
                     quantity = std::max({quantity, min_q, indicator_by_symbol.at(sym).get_min_quant()});
@@ -320,6 +317,9 @@ int main() {
                     else if (action == "SELL") {
                         indicator_by_symbol.at(sym).close_position(event.price);
                     }
+
+
+                    quantity = ceil(quantity/step_size) * step_size;
 
                     cout <<"Quantity: "<< quantity << " for symbol " << sym << " | Price: " << event.price  << "\n\n";
 
