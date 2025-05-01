@@ -237,7 +237,7 @@ int main() {
     ws->on_message([&](const json &data) {
         if (!running) return;
 
-        if (data.contains("data") && data["data"].contains("e") && data["data"]["e"] == "kline") {
+        if (data.contains("data") && data["data"].contains("e") && data["data"]["e"] == "kline" && data["data"]["k"]["x"] == true) {
             try {
 
                 string full = data["data"]["s"].get<string>();
@@ -411,34 +411,34 @@ int main() {
 
 
     // Поток мониторинга и создания ордеров
-    thread monitor([&]() {
-        while (running) {
-            auto now = system_clock::now();
-            time_t tt = system_clock::to_time_t(now);
-
-            std::tm tm_info{};
-            if (localtime_s(&tm_info, &tt) != 0) {
-               cerr << "Error convert time, Status" << endl;
-            }
-
-
-            //  cout << "====== Status "<< std::put_time(&tm_info, "%F %T") << " ======" << "\n\n";
-            //  cout << "Active orders: " << order_manager.queue_size() << "\n";
-            //  cout << "Current balance:" << "\n";
-            //  for (const auto sym : symbols){
-            //  cout <<sym << ": " << acc_manager.get_balance(sym) << " | USDT: "
-            //          << acc_manager.get_balance("USDT") << "\n\n";
-            // }
-
-            std::this_thread::sleep_for(300s);
-        }
-    });
+    // thread monitor([&]() {
+    //     while (running) {
+    //         auto now = system_clock::now();
+    //         time_t tt = system_clock::to_time_t(now);
+    //
+    //         std::tm tm_info{};
+    //         if (localtime_s(&tm_info, &tt) != 0) {
+    //            cerr << "Error convert time, Status" << endl;
+    //         }
+    //
+    //
+    //         //  cout << "====== Status "<< std::put_time(&tm_info, "%F %T") << " ======" << "\n\n";
+    //         //  cout << "Active orders: " << order_manager.queue_size() << "\n";
+    //         //  cout << "Current balance:" << "\n";
+    //         //  for (const auto sym : symbols){
+    //         //  cout <<sym << ": " << acc_manager.get_balance(sym) << " | USDT: "
+    //         //          << acc_manager.get_balance("USDT") << "\n\n";
+    //         // }
+    //
+    //         std::this_thread::sleep_for(300s);
+    //     }
+    // });
 
 
     // Поток для логирования данных (индикаторы, исторические), каждые 30с
     thread db_log_data_thread([&]() {
         while (running) {
-           std::this_thread::sleep_for(150s);
+           std::this_thread::sleep_for(30s);
 
 
 
@@ -480,7 +480,7 @@ int main() {
     order_manager.stop();
     acc_manager.stop();
     ws_thread.join();
-    monitor.join();
+    // monitor.join();
     db_log_data_thread.join();
 
     return 0;
