@@ -10,7 +10,7 @@
 class Supertrend : public Indicator{
 private:
     std::deque<double> window;
-    double sum_;
+    double sum_{0.0};
     double prev_close = 0.0;
     double close = 0.0;
     double high = 0.0;

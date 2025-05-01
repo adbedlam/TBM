@@ -44,6 +44,7 @@ public:
             const std::string &interval,
             int limit
     );
+
 };
 
 

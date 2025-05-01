@@ -12,6 +12,8 @@ using std::vector;
 class AnalysisHandler {
 private:
     double quantity{0.001};
+    double step_size{};
+    double min_notional;
 
     double prev_ATR{0.0};
 
@@ -32,7 +34,7 @@ private:
 
     bool position_opened;
     double entry_price;
-    double entry_quantity;
+    double entry_quantity{0.001};
     double total_profit;
     double total_profit_percent;
 
@@ -50,7 +52,7 @@ private:
     std::chrono::time_point<std::chrono::system_clock> last_signal_time;
 
 public:
-    explicit AnalysisHandler(const double& quant);
+    explicit AnalysisHandler(const double& quant, const double& step_size, const double& notional);
 
    /* void set_params(const double& rsi, const double& bb_up, const double& bb_low,
                     const double& bb_mean, const double& macd, const double& macd_signal, const double& ema, const double& price);*/
@@ -72,6 +74,10 @@ public:
     double get_total_profit_percent() const;
     double get_entry_quantity() const;
 
+    double get_min_quant() const;
+    double get_step_size() const;
+
+    double get_min_notional() const;
 };
 
 

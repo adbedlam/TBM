@@ -52,7 +52,8 @@ private:
            "id SERIAL PRIMARY KEY,"
            "timestamp BIGINT NOT NULL,"
            "price DOUBLE PRECISION NOT NULL,"
-           "volume DOUBLE PRECISION NOT NULL,"
+           "usdt_balance DOUBLE PRECISION NOT NULL,"
+           "coin_balance DOUBLE PRECISION NOT NULL,"
            "symbol VARCHAR(16) NOT NULL)"
         );
 
@@ -69,8 +70,8 @@ private:
 
             conn.prepare(
                 "insert_historical",
-                "INSERT INTO historical (timestamp, price, volume, symbol) "
-                "VALUES ($1, $2, $3, $4)"
+                "INSERT INTO historical (timestamp, price, usdt_balance, coin_balance, symbol) "
+                "VALUES ($1, $2, $3, $4, $5)"
             );
 
             conn.prepare(
@@ -112,7 +113,7 @@ public:
         }
     }
 
-    void log_data(const Candle &data);
+    void log_data(const Candle &data, const double& usdt_balance, const double&  coin_balance);
 
     void log_data(const string& symbols, const double &macd, const double &signal, const bool &supertrend, const double &ATR,
                   const double &Bbands_u, const double &Bbands_l,

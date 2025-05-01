@@ -110,7 +110,6 @@ json BinanceAPIc::http_request(const string &method, const string &endpoint, con
 
     stream.handshake(ssl::stream_base::client);
 
-
     beast::http::request<beast::http::string_body> req{beast::http::string_to_verb(method), endpoint + "?" + query, 11};
 
     req.set(beast::http::field::host, base_url.substr(8));
@@ -128,10 +127,14 @@ json BinanceAPIc::http_request(const string &method, const string &endpoint, con
 
     beast::error_code ec;
 
-    stream.shutdown(ec);
 
+
+    stream.shutdown(ec);
     return json::parse(res.body());
 }
+
+
+
 
 int64_t BinanceAPIc::get_server_time() {
     json response = http_request("GET", "/api/v3/time", {}, true);

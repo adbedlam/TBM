@@ -1,6 +1,6 @@
 #include "DataBase.h"
 
-void DataBaseLog::log_data(const Candle &data) {
+void DataBaseLog::log_data(const Candle &data, const double& usdt_balance, const double&  coin_balance) {
     try {
         pqxx::work txn(conn);  // Используем объект соединения
 
@@ -9,7 +9,8 @@ void DataBaseLog::log_data(const Candle &data) {
             "insert_historical",
             data.timestamp,
             data.price,
-            data.volume,
+            usdt_balance,
+            coin_balance,
             data.symbol
         );
 

@@ -20,7 +20,9 @@ void OrderManager::process_orders() {
 
                 try {
                     json response = Api.create_order(order.symbol, order.action, "LIMIT", order.quant, order.price);
+                    cout << response.dump(2);
                     cout << endl;
+
                     cout << "Order exec: " << endl; //<< response.dump(2) << endl;
 
 

@@ -4,7 +4,8 @@
 
 #include "AnalysisHandler.h"
 
-AnalysisHandler::AnalysisHandler(const double &quant) : quantity(quant){}
+AnalysisHandler::AnalysisHandler(const double& quant, const double& step_size, const double& notional) :
+                                quantity(quant), step_size(step_size), min_notional(notional){}
 
 /*void AnalysisHandler::set_params(const double& rsi, const double& bb_up, const double& bb_low,
                     const double& bb_mean, const double& macd, const double& macd_signal, const double& ema,
@@ -128,4 +129,16 @@ double AnalysisHandler::get_total_profit_percent() const {
 
 double AnalysisHandler::get_entry_quantity() const {
     return entry_quantity;
+}
+
+double AnalysisHandler::get_min_quant() const {
+    return quantity;
+}
+
+double AnalysisHandler::get_step_size() const {
+    return step_size;
+}
+
+double AnalysisHandler::get_min_notional() const{
+    return min_notional;
 }

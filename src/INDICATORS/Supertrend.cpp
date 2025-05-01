@@ -21,6 +21,7 @@ void Supertrend::update(const Candle &candle){
     window.push_back(TR);
     sum_ += TR;
 
+
     if (window.size() > period) {
         sum_ -= window.front();
         window.pop_front();
@@ -32,6 +33,8 @@ void Supertrend::update(const Candle &candle){
        prev_upper_band = upper_band;
        upper_band = ((high + low) / 2) + (mult * ATR);
    }
+
+
 }
 bool Supertrend::get_trend(){
     if (close > prev_upper_band) return true;
