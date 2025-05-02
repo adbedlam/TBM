@@ -20,22 +20,27 @@ void BollingerBandsIndicator::update(const Candle &candle) {
 
 BBValues BollingerBandsIndicator::get_bands() const {
     if (window.empty()) {
-        return  {0.0, 0.0, 0.0};
+        return {0.0, 0.0, 0.0};
     }
+    if (window.size() == period) {
+        double mean = sum_ / window.size();
+        double variance = 0.0;
+        const auto sample = window.size();
 
-    double mean = sum_ / window.size();
-    double variance = 0.0;
-    const auto sample = window.size();
+        for (const auto &price: window) {
+            variance += (price - mean) * (price - mean);
+        }
+        variance /= (sample - 1);
 
-    for (const auto& price : window) {
-        variance += (price - mean) * (price - mean);
+        double stddev = std::sqrt(variance);
+
+        return {mean - (multiplier * stddev), mean, mean + (multiplier * stddev)};
     }
-    variance /= sample;
-
-    double stddev = std::sqrt(variance);
-
-    return {mean - (multiplier * stddev), mean, mean +( multiplier * stddev)};
+    else
+        return {0.0, 0.0, 0.0};
 }
+
+
 
 double BollingerBandsIndicator::get_value() {
     return get_bands().bb_mid;

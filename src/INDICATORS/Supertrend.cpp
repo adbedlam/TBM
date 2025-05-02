@@ -28,18 +28,36 @@ void Supertrend::update(const Candle &candle){
     }
 
    if (window.size() == period){
-       prev_ATR = ATR;
        ATR = sum_ / period;
-       prev_upper_band = upper_band;
+       prev_Supertrend = supertrend;
        upper_band = ((high + low) / 2) + (mult * ATR);
+       lower_band = ((high + low) / 2) - (mult * ATR);
    }
-
 
 }
 bool Supertrend::get_trend(){
-    if (close > prev_upper_band) return true;
-    return false;
+    if (prev_Supertrend == 0.0){
+        if(close > lower_band) {
+            supertrend = lower_band;
+            return true;
+        }
+        else{
+            supertrend = upper_band;
+            return false;
+        }
+    }
+    else{
+        if(close > prev_Supertrend){
+            supertrend = lower_band;
+            return true;
+        }
+        else{
+            supertrend = upper_band;
+            return false;
+        }
+    }
 }
+
 double Supertrend::get_value() {
     return ATR;
 }

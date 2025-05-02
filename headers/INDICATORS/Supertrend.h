@@ -21,7 +21,8 @@ private:
     int period;
     double TR{0.0};
     double ATR{0.0};
-    double prev_ATR{0.0};
+    double prev_Supertrend{0.0};
+    double supertrend{0.0};
     int mult = 3;
 public:
     Supertrend(int period);

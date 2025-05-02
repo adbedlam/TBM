@@ -71,7 +71,7 @@ int main() {
 
 
     // Инициализация БД-логера
-    const string db_name = "TBM";
+    const string db_name = "T_B_database";
     const string db_user = "postgres";
     const string db_host = "localhost";
     const string db_port = "5432";
@@ -118,7 +118,7 @@ int main() {
     // EMA
     auto ema_long = 200;
 
-    auto supertrend_period = 14;
+    int supertrend_period = 10;
 
 
 
