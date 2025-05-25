@@ -56,14 +56,14 @@ public:
 
    /* void set_params(const double& rsi, const double& bb_up, const double& bb_low,
                     const double& bb_mean, const double& macd, const double& macd_signal, const double& ema, const double& price);*/
-    void set_params(const bool& supertrend,const double& ATR, const double& bb_up, const double& bb_low,
+    void set_params(const double& rsi, const double& bb_up, const double& bb_low,
                     const double& bb_mean, const double& macd, const double& macd_signal, const double& ema, const double& price);
 
     std::pair<bool, std::string> check_signal();
 
 
+    std::pair<bool, std::string> check_RSI_bb_strategy();
     std::pair<bool, std::string> check_macd_ATR_bb_strategy();
-    std::pair<bool, std::string> check_macd_ema_supertrend_strategy();
 
     bool is_cooldown() const;
 

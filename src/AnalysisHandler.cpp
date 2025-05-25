@@ -10,13 +10,13 @@ AnalysisHandler::AnalysisHandler(const double& quant, const double& step_size, c
 /*void AnalysisHandler::set_params(const double& rsi, const double& bb_up, const double& bb_low,
                     const double& bb_mean, const double& macd, const double& macd_signal, const double& ema,
                     const double& price){*/
-void AnalysisHandler::set_params(const bool& supertrend,const double& ATR, const double& bb_up, const double& bb_low,
+void AnalysisHandler::set_params(const double& rsi, const double& bb_up, const double& bb_low,
                                  const double& bb_mean, const double& macd, const double& macd_signal, const double& ema,
                                  const double& price) {
     cur_price = price;
 
-/*    this->prev_rsi = this->rsi;
-    this->rsi = rsi;*/
+    this->prev_rsi = this->rsi;
+    this->rsi = rsi;
     this->ATR = ATR;
     this->supertrend = supertrend;
     this->bb_up = bb_up;
@@ -43,8 +43,8 @@ std::pair<bool, std::string> AnalysisHandler::check_signal() {
         return {false, "COOLDOWN"};
     }
 
-    std::pair<bool, std::string> strategy_1 = check_macd_ATR_bb_strategy();
-    std::pair<bool, std::string> strategy_2 = check_macd_ema_supertrend_strategy();
+    std::pair<bool, std::string> strategy_1 = check_RSI_bb_strategy();
+    std::pair<bool, std::string> strategy_2 = check_macd_ATR_bb_strategy();
 
     if (strategy_1.first) {
         last_signal_time = std::chrono::system_clock::now();
@@ -60,6 +60,21 @@ std::pair<bool, std::string> AnalysisHandler::check_signal() {
 }
 
 
+std::pair<bool, std::string>  AnalysisHandler::check_RSI_bb_strategy() {
+
+    std::list<double> price_history;
+
+    price_history.push_back(cur_price);
+
+    if ((cur_price <= bb_low) && (rsi <= 30))
+        return {true, "STRATEGY_1_BUY"};
+
+    if ((cur_price >= bb_up) && (rsi >= 70))
+        return {true, "STRATEGY_1_SELL"};
+
+    return {false, ""};
+}
+
 std::pair<bool, std::string>  AnalysisHandler::check_macd_ATR_bb_strategy() {
 
     std::list<double> price_history;
@@ -67,30 +82,14 @@ std::pair<bool, std::string>  AnalysisHandler::check_macd_ATR_bb_strategy() {
     price_history.push_back(cur_price);
 
     if ((cur_price <= bb_low) && (ATR > prev_ATR) && (prev_macd_hist < macd_hist) && (macd_hist < 0))
-        return {true, "STRATEGY_1_BUY"};
+        return {true, "STRATEGY_2_BUY"};
 
     if ((cur_price >= bb_up) && (ATR > prev_ATR) && (prev_macd_hist > macd_hist) && (macd_hist > 0))
-        return {true, "STRATEGY_1_SELL"};
-
-    return {false, ""};
-}
-
-std::pair<bool, std::string> AnalysisHandler::check_macd_ema_supertrend_strategy() {
-
-    int trend = 0;
-
-    if ((prev_macd_hist < 0) && (macd_hist >= 0))
-        trend = 1;
-    if ((trend == 1) && (cur_price > ema200) && (supertrend))
-        return {true, "STRATEGY_2_BUY"};
-    if ((prev_macd_hist > 0) && (macd_hist <= 0))
-        trend = 2;
-    if ((trend == 2) && (cur_price < ema200) && (supertrend == false))
         return {true, "STRATEGY_2_SELL"};
 
     return {false, ""};
-
 }
+
 
 
 bool AnalysisHandler::is_cooldown() const {

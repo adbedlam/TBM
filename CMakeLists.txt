@@ -46,6 +46,12 @@ add_executable(trade_bot src/main.cpp
         headers/AnalysisHandler.h
         headers/INDICATORS/Supertrend.h
         src/INDICATORS/Supertrend.cpp
+        headers/INDICATORS/MAIndicator.h
+        headers/INDICATORS/OBVIndicator.h
+        headers/INDICATORS/ICHIMOKUIndicator.h
+        src/INDICATORS/MAIndicator.cpp
+        src/INDICATORS/OBVIndicator.cpp
+        src/INDICATORS/ICHIMOKUIndicator.cpp
 )
 
 target_include_directories(trade_bot PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/headers" )

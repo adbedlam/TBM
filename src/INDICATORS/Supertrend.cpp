@@ -16,46 +16,42 @@ void Supertrend::update(const Candle &candle){
     low = candle.low;
     prev_close = close;
     close = candle.price;
-    TR = std::max({high - low, std::abs(high - prev_close), std::abs(low - prev_close)});
 
-    window.push_back(TR);
-    sum_ += TR;
+    if (prev_close != 0) {
+        TR = std::max({high - low, std::abs(high - prev_close), std::abs(low - prev_close)});
+        window.push_back(TR);
+        sum_ += TR;
 
+        if (window.size() > period) {
+            sum_ -= window.front();
+            window.pop_front();
+        }
 
-    if (window.size() > period) {
-        sum_ -= window.front();
-        window.pop_front();
+        if (window.size() == period){
+            prev_ATR = ATR;
+            ATR = sum_ / period;
+            upper_band = ((high + low) / 2) + (mult * ATR);
+            lower_band = ((high + low) / 2) - (mult * ATR);
+
+            double new_sptr;
+
+            if (prev_Supertrend == 0.0) {
+                new_sptr = (close > lower_band) ? lower_band : upper_band;
+            }
+            else {
+                new_sptr = (close > prev_Supertrend) ? lower_band : upper_band;
+            }
+
+            current_trend = (close > new_sptr);
+
+            sptr = new_sptr;
+            prev_Supertrend = new_sptr;
+        }
     }
-
-   if (window.size() == period){
-       ATR = sum_ / period;
-       prev_Supertrend = supertrend;
-       upper_band = ((high + low) / 2) + (mult * ATR);
-       lower_band = ((high + low) / 2) - (mult * ATR);
-   }
-
 }
 bool Supertrend::get_trend(){
-    if (prev_Supertrend == 0.0){
-        if(close > lower_band) {
-            supertrend = lower_band;
-            return true;
-        }
-        else{
-            supertrend = upper_band;
-            return false;
-        }
-    }
-    else{
-        if(close > prev_Supertrend){
-            supertrend = lower_band;
-            return true;
-        }
-        else{
-            supertrend = upper_band;
-            return false;
-        }
-    }
+
+    return current_trend;
 }
 
 double Supertrend::get_value() {

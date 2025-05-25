@@ -26,7 +26,7 @@ private:
             "symbols VARCHAR(10) NOT NULL,"
             "macd DOUBLE PRECISION NOT NULL,"
             "signal DOUBLE PRECISION NOT NULL,"
-            "supertrend BOOLEAN NOT NULL,"
+            "rsi DOUBLE PRECISION NOT NULL,"
             "ATR DOUBLE PRECISION NOT NULL,"
             "upper_band DOUBLE PRECISION NOT NULL,"
             "lower_band DOUBLE PRECISION NOT NULL,"
@@ -76,7 +76,7 @@ private:
 
             conn.prepare(
                 "insert_indicators",
-                "INSERT INTO indicators (symbols, macd, signal, supertrend, ATR, upper_band, lower_band, middle_band, price, timestamp) "
+                "INSERT INTO indicators (symbols, macd, signal, rsi, ATR, upper_band, lower_band, middle_band, price, timestamp) "
                 "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"
             );
 
@@ -115,7 +115,7 @@ public:
 
     void log_data(const Candle &data, const double& usdt_balance, const double&  coin_balance);
 
-    void log_data(const string& symbols, const double &macd, const double &signal, const bool &supertrend, const double &ATR,
+    void log_data(const string& symbols, const double &macd, const double &signal, const double &rsi, const double &ATR,
                   const double &Bbands_u, const double &Bbands_l,
                   const double &Bbands_m, const double &price, const uint64_t &time);
 

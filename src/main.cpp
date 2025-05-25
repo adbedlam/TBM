@@ -25,11 +25,11 @@ struct SymbolData {
     //RSIIndicator rsi;
     BollingerBandsIndicator bb;
     MACDIndicator macd;
-    Supertrend supertrend;
+    RSIIndicator rsi;
     double last_price;
 
-    SymbolData(int ema_p, int bb_p, int macd_s, int macd_l, int macd_sig, int supertrend_p) :
-            ema200(ema_p), bb(bb_p), macd(macd_s, macd_l, macd_sig), supertrend(supertrend_p){}
+    SymbolData(int ema_p, int bb_p, int macd_s, int macd_l, int macd_sig, int rsi_p) :
+            ema200(ema_p), bb(bb_p), macd(macd_s, macd_l, macd_sig), rsi(rsi_p){}
 
    /* SymbolData(int ema_p, int rsi_p, int bb_p, int macd_s, int macd_l, int macd_sig, int supertrend_p) :
     ema200(ema_p), rsi(rsi_p), bb(bb_p), macd(macd_s, macd_l, macd_sig), supertrend(supertrend_p){} */
@@ -46,7 +46,7 @@ struct LoggedData {
     double bb_low;
     double bb_mid;
     double price;
-    bool supertrend;
+    double rsi;
     uint64_t timestamp;
 };
 
@@ -99,6 +99,7 @@ int main() {
 
 
     double quantity;
+    std::unordered_map<std::string, double> sum_quant;
     double step_size;
     double min_notional;
 
@@ -157,7 +158,7 @@ int main() {
             macd_fast,
             macd_slow,
             macd_signal,
-            supertrend_period
+            rsi_period
             )
         );
         indicator_by_symbol.emplace(
@@ -196,9 +197,9 @@ int main() {
                 //st.rsi.update(data);
                 st.bb.update(data);
                 st.macd.update(data);
-                st.supertrend.update(data);
+                st.rsi.update(data);
 
-                ind.set_params(st.supertrend.get_trend(), st.supertrend.get_value(), st.bb.get_bands().bb_up,
+                ind.set_params(st.rsi.get_value(), st.bb.get_bands().bb_up,
                                   st.bb.get_bands().bb_low, st.bb.get_bands().bb_mid,
                                   st.macd.get_macd().macd, st.macd.get_macd().signal,
                                   st.ema200.get_value(), data.price);
@@ -273,11 +274,11 @@ int main() {
                 //st.rsi.update(event);
                 st.bb.update(event);
                 st.macd.update(event);
-                st.supertrend.update(event);
+                st.rsi.update(event);
 
                 st.last_price = event.price;
 
-                ind.set_params(st.supertrend.get_trend(),st.supertrend.get_value(), st.bb.get_bands().bb_up,
+                ind.set_params(st.rsi.get_value(), st.bb.get_bands().bb_up,
                                  st.bb.get_bands().bb_low, st.bb.get_bands().bb_mid,
                                  st.macd.get_macd().macd, st.macd.get_macd().signal,
                                  st.ema200.get_value(), event.price);
@@ -297,11 +298,12 @@ int main() {
                     if (signal_type.find("BUY") != string::npos) {
                         action = "BUY";
                         quantity = (usdt_balance * risk_percent / 100) / price;
-
+                        sum_quant[sym] += quantity;
                     }
                     else if (signal_type.find("SELL") != string::npos) {
                         action = "SELL";
-                        quantity = indicator_by_symbol.at(sym).get_entry_quantity();
+                        quantity = sum_quant[sym];
+                        sum_quant[sym] = 0;
                     }
 
                     step_size = indicator_by_symbol.at(sym).get_step_size();
@@ -325,8 +327,6 @@ int main() {
 
                     order_manager.add_order(action, sym+"USDT", event.price, quantity, signal_type.substr(0,10));
                     cout << "Current Action: " << action << "\n\n";
-
-
                 }
                 //
                 // cout << "====== Indicators for "<< sym << " "<< std::put_time(&tm_info, "%F %T") << " ======" << "\n\n";
@@ -356,8 +356,7 @@ int main() {
                         time_log_data.bb_low = st.bb.get_bands().bb_low;
                         time_log_data.macd = st.macd.get_macd().macd;
                         time_log_data.macd_s = st.macd.get_macd().signal;
-                        time_log_data.supertrend = st.supertrend.get_trend();
-                        time_log_data.ATR = st.supertrend.get_value();
+                        time_log_data.rsi = st.rsi.get_value();
                         time_log_data.price = event.price;
                         time_log_data.timestamp = event.timestamp;
 
@@ -453,7 +452,7 @@ int main() {
                        symbol,
                        data.macd,
                        data.macd_s,
-                       data.supertrend,
+                       data.rsi,
                        data.ATR,
                        data.bb_up,
                        data.bb_low,
