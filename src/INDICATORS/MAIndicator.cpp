@@ -24,3 +24,13 @@ void MAIndicator:: update(const Candle &candle){
 double MAIndicator:: get_value(){
     return MA;
 }
+
+int MAIndicator::get_signal(double price) const {
+    if (window.size() < period) return 0;
+
+    const double epsilon = 1e-6;
+
+    if (price > MA + epsilon) return +1;
+    if (price < MA - epsilon) return -1;
+    return 0;
+}

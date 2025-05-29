@@ -20,5 +20,8 @@ public:
     OBVIndicator(int period);
     void update(const Candle &candle) override;
     double get_value() override;
+
+    int get_signal() const;
+
 };
 #endif //TRADE_BOT_OBVINDICATOR_H

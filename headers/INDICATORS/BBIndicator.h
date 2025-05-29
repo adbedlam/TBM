@@ -30,7 +30,7 @@ public:
     BBValues get_bands() const;
 
     double get_value() override;
-
+    int get_signal() const;
 };
 
 #endif //BBINDICATOR_H

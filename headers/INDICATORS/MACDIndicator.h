@@ -24,6 +24,8 @@ public:
     MACDIndicator(int short_period, int long_period, int signal_period);
     void update(const Candle& candle) override;
 
+    int get_signal();
+
     MACD_values get_macd() ;
     double get_value() override;
 

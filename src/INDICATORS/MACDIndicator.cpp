@@ -26,3 +26,12 @@ MACD_values MACDIndicator::get_macd()  {
 double MACDIndicator::get_value() {
     return macd_line;
 }
+
+int MACDIndicator::get_signal()  {
+    double signal = signal_ema.get_value();
+    const double epsilon = 1e-6;
+
+    if (macd_line > signal + epsilon) return +1;    // Buy
+    if (macd_line < signal - epsilon) return -1;    // Sell
+    return 0;                                       // Hold
+}

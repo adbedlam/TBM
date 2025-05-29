@@ -6,7 +6,9 @@
 #include "INDICATORS/EMAIndicator.h"
 #include "INDICATORS/RSIIndicator.h"
 #include "INDICATORS/MACDIndicator.h"
-#include "INDICATORS/Supertrend.h"
+#include "INDICATORS/MAIndicator.h"
+#include "INDICATORS/OBVIndicator.h"
+#include "INDICATORS/ICHIMOKUIndicator.h"
 #include "AnalysisHandler.h"
 
 using json = nlohmann::json;
@@ -21,18 +23,19 @@ void signal_handler(int signum) {
 
 // Структура хранящая индикаторы для каждой пары
 struct SymbolData {
-    EMAIndicator ema200;
-    //RSIIndicator rsi;
     BollingerBandsIndicator bb;
     MACDIndicator macd;
     RSIIndicator rsi;
+    OBVIndicator obv_indicator;
+    ICHIMOKUIndicator ichimoku_indicator;
+    // TODO Допиши ещё 1 инидикатор
+
     double last_price;
 
-    SymbolData(int ema_p, int bb_p, int macd_s, int macd_l, int macd_sig, int rsi_p) :
-            ema200(ema_p), bb(bb_p), macd(macd_s, macd_l, macd_sig), rsi(rsi_p){}
+    SymbolData(int bb_p, int macd_s, int macd_l, int macd_sig, int rsi_p, int obv_p, vector<int> ichim_p) :
+            bb(bb_p), macd(macd_s, macd_l, macd_sig), rsi(rsi_p), obv_indicator(obv_p),
+            ichimoku_indicator(ichim_p[0], ichim_p[1], ichim_p[2]){}
 
-   /* SymbolData(int ema_p, int rsi_p, int bb_p, int macd_s, int macd_l, int macd_sig, int supertrend_p) :
-    ema200(ema_p), rsi(rsi_p), bb(bb_p), macd(macd_s, macd_l, macd_sig), supertrend(supertrend_p){} */
 };
 
 // Логирование данных
@@ -121,13 +124,14 @@ int main() {
 
     int supertrend_period = 10;
 
-
+    // OBV
+    int obv_period = 0;
 
 
     // Валюты по которым вести торги
     const std::vector<string> symbols = {"XRP", "LTC", "ADA", "TRX", "TON"};
 
-
+    vector<>
     //Создание Объектов индикаторов, для каждой пары
     std::unordered_map<string, SymbolData> symbol_data;
     std::unordered_map<string, AnalysisHandler> indicator_by_symbol;
@@ -152,13 +156,13 @@ int main() {
             std::piecewise_construct,
             std::forward_as_tuple(symbol),
             std::forward_as_tuple(
-            ema_long,
-            //rsi_period,
             bb_period,
-            macd_fast,
+            {macd_fast,
             macd_slow,
-            macd_signal,
-            rsi_period
+            macd_signal},
+            rsi_period,
+            obv_period,
+            {9, 26, 52}
             )
         );
         indicator_by_symbol.emplace(
@@ -193,16 +197,19 @@ int main() {
             };
                 logger.log_data(data, acc_manager.get_balance("USDT"), acc_manager.get_balance(coin));
 
-                st.ema200.update(data);
-                //st.rsi.update(data);
+
                 st.bb.update(data);
                 st.macd.update(data);
                 st.rsi.update(data);
+                st.ichimoku_indicator.update(data);
+                st.obv_indicator.update(data);
 
-                ind.set_params(st.rsi.get_value(), st.bb.get_bands().bb_up,
-                                  st.bb.get_bands().bb_low, st.bb.get_bands().bb_mid,
-                                  st.macd.get_macd().macd, st.macd.get_macd().signal,
-                                  st.ema200.get_value(), data.price);
+
+
+                // ind.set_params(st.rsi.get_value(), st.bb.get_bands().bb_up,
+                //                   st.bb.get_bands().bb_low, st.bb.get_bands().bb_mid,
+                //                   st.macd.get_macd().macd, st.macd.get_macd().signal,
+                //                   st.ema200.get_value(), data.price);
             }
 
             cout << "Successfully loaded " << klines.size() << " historical candles from Binance." << "\n\n";
@@ -270,18 +277,19 @@ int main() {
                 logger.log_data(event, acc_manager.get_balance("USDT"), acc_manager.get_balance(sym));
 
                 auto &st = it->second;
-                st.ema200.update(event);
-                //st.rsi.update(event);
+
                 st.bb.update(event);
                 st.macd.update(event);
                 st.rsi.update(event);
+                st.ichimoku_indicator.update(event);
+                st.obv_indicator.update(event);
 
                 st.last_price = event.price;
 
-                ind.set_params(st.rsi.get_value(), st.bb.get_bands().bb_up,
-                                 st.bb.get_bands().bb_low, st.bb.get_bands().bb_mid,
-                                 st.macd.get_macd().macd, st.macd.get_macd().signal,
-                                 st.ema200.get_value(), event.price);
+                // ind.set_params(st.rsi.get_value(), st.bb.get_bands().bb_up,
+                //                  st.bb.get_bands().bb_low, st.bb.get_bands().bb_mid,
+                //                  st.macd.get_macd().macd, st.macd.get_macd().signal,
+                //                  st.ema200.get_value(), event.price);
 
                 auto [has_signal, signal_type] = ind.check_signal();
 

@@ -37,6 +37,18 @@ void ICHIMOKUIndicator::update(const Candle& candle) {
     SSB = calculateLine(highs_SSB, lows_SSB);
 }
 
+int ICHIMOKUIndicator::get_signal() const {
+    const double epsilon = 1e-6;
+    if (TS > KS + epsilon) return +1;
+    if (TS < KS - epsilon) return -1;
+    return 0;
+}
+
+double ICHIMOKUIndicator::get_value() {
+    return 0;
+}
+
+
 double ICHIMOKUIndicator::getTS() const { return TS; }
 double ICHIMOKUIndicator::getKS() const { return KS; }
 double ICHIMOKUIndicator::getSSA() const { return SSA; }

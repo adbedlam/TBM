@@ -8,6 +8,7 @@ private:
     double multiplier;
     double ema;
     bool initialized = false;
+    double price{0.0};
 
 public:
     explicit EMAIndicator(int period);
@@ -15,6 +16,7 @@ public:
 
     double get_value() override;
 
+    int get_signal() const;
 
 };
 

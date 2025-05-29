@@ -12,9 +12,18 @@ void EMAIndicator::update(const Candle &candle) {
     } else {
         ema = (candle.price - ema) * multiplier + ema;
     }
+    price = candle.price;
 }
 
 double EMAIndicator::get_value() {
     return ema;
 }
 
+int EMAIndicator::get_signal() const {
+    if (!initialized) return 0;
+
+    const double epsilon = 1e-6;
+    if (price > ema + epsilon) return +1;
+    if (price < ema - epsilon) return -1;
+    return 0;
+}

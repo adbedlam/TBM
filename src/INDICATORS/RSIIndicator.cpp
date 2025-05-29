@@ -52,3 +52,19 @@ double RSIIndicator::get_value() {
 
     return 100.0 - (100.0 / (1 + rs));
 }
+
+int RSIIndicator::get_signal() const {
+    if (!initialized) return 0;
+
+    double rsi = 0.0;
+    if (mean_loss == 0.0) {
+        rsi = 100.0;
+    } else {
+        double rs = mean_gain / mean_loss;
+        rsi = 100.0 - (100.0 / (1 + rs));
+    }
+
+    if (rsi < 30.0) return +1;
+    if (rsi > 70.0) return -1;
+    return 0;
+}

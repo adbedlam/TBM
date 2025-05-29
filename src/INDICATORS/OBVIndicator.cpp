@@ -31,3 +31,11 @@ void OBVIndicator:: update(const Candle &candle){
 double OBVIndicator::get_value() {
     return OBV;
 }
+
+int OBVIndicator::get_signal() const {
+    const double epsilon = 1e-6;
+
+    if (OBV > prev_OBV + epsilon) return +1;
+    if (OBV < prev_OBV - epsilon) return -1;
+    return 0;
+}

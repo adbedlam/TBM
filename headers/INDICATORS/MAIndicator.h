@@ -13,11 +13,16 @@ private:
     std::deque<double> window;
     int period;
     double MA;
+
+    double sum = 0.0;
+    double cp = 0.0;
+
 public:
     MAIndicator(int period);
     void update(const Candle &candle) override;
     double get_value() override;
-    double sum = 0.0;
-    double cp = 0.0;
+
+    int get_signal(double price) const;
+
 };
 #endif //TRADE_BOT_MAINDICATOR_H

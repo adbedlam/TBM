@@ -39,7 +39,20 @@ BBValues BollingerBandsIndicator::get_bands() const {
     else
         return {0.0, 0.0, 0.0};
 }
+int BollingerBandsIndicator::get_signal() const{
+    if (window.size() < period) return 0;
 
+    BBValues bands = get_bands();
+    double price = window.back();
+
+    if (price < bands.bb_low) {
+        return +1;
+    }
+    if (price > bands.bb_up) {
+        return -1;
+    }
+    return 0;
+}
 
 
 double BollingerBandsIndicator::get_value() {

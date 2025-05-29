@@ -27,6 +27,11 @@ private:
 public:
     ICHIMOKUIndicator(int p1 = 9, int p2 = 26, int p3 = 52);
     void update(const Candle &candle) override;
+
+    int get_signal() const;
+
+    double get_value() override;
+
     double getTS() const;
     double getKS() const;
     double getSSA() const;
