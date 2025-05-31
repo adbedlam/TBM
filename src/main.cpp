@@ -131,7 +131,7 @@ int main() {
     // Валюты по которым вести торги
     const std::vector<string> symbols = {"XRP", "LTC", "ADA", "TRX", "TON"};
 
-    vector<>
+
     //Создание Объектов индикаторов, для каждой пары
     std::unordered_map<string, SymbolData> symbol_data;
     std::unordered_map<string, AnalysisHandler> indicator_by_symbol;
@@ -203,6 +203,7 @@ int main() {
                 st.rsi.update(data);
                 st.ichimoku_indicator.update(data);
                 st.obv_indicator.update(data);
+
 
 
 
