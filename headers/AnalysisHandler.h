@@ -17,7 +17,7 @@ private:
 
     double best_profit;
     vector<int> best_weights;
-
+    vector<double> historical_data;
     bool buy = true;
     bool position_opened;
 

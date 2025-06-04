@@ -83,7 +83,6 @@ double AnalysisHandler::backtest(const std::vector<int>& weights) {
     double total_profit = 0.0;
 
     for (int i = 1; i < historical_data.size(); ++i) {
-        std::vector<int> signals = calculate_signals(historical_data[i]);
         int combined = 0;
         for (int j = 0; j < weights.size(); ++j)
             combined += weights[j] * signals[j];
@@ -91,9 +90,9 @@ double AnalysisHandler::backtest(const std::vector<int>& weights) {
         // Симуляция сделок
         if (combined > 0) {
             // Покупаем по цене historical_data[i].price
-            total_profit += simulate_buy_sell(i);
+            total_profit += historical_data[i];
         } else if (combined < 0) {
-            total_profit -= simulate_sell_buy(i);
+            total_profit -= historical_data[i];
         }
     }
 

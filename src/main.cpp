@@ -105,6 +105,8 @@ int main() {
     std::unordered_map<std::string, double> sum_quant;
     double step_size;
     double min_notional;
+    vector<double> historical_data;
+    vector<int> signals;
 
     // Параметры стратегии
 
@@ -197,12 +199,22 @@ int main() {
             };
                 logger.log_data(data, acc_manager.get_balance("USDT"), acc_manager.get_balance(coin));
 
-
+                historical_data.push_back(data.price);
                 st.bb.update(data);
+                signals.push_back(st.bb.get_signal());
                 st.macd.update(data);
+                signals.push_back(st.macd.get_signal());
                 st.rsi.update(data);
+                signals.push_back(st.rsi.get_signal());
                 st.ichimoku_indicator.update(data);
+                signals.push_back(st.ichimoku_indicator.get_signal());
                 st.obv_indicator.update(data);
+                signals.push_back(st.obv_indicator.get_signal());
+
+
+
+
+
 
 
 
@@ -278,12 +290,18 @@ int main() {
                 logger.log_data(event, acc_manager.get_balance("USDT"), acc_manager.get_balance(sym));
 
                 auto &st = it->second;
-
+                historical_data.push_back(event.price);
                 st.bb.update(event);
+                signals.push_back(st.bb.get_signal());
                 st.macd.update(event);
+                signals.push_back(st.macd.get_signal());
                 st.rsi.update(event);
+                signals.push_back(st.rsi.get_signal());
                 st.ichimoku_indicator.update(event);
+                signals.push_back(st.ichimoku_indicator.get_signal());
                 st.obv_indicator.update(event);
+                signals.push_back(st.obv_indicator.get_signal());
+
 
                 st.last_price = event.price;
 
