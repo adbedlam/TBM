@@ -28,13 +28,14 @@ struct SymbolData {
     RSIIndicator rsi;
     OBVIndicator obv_indicator;
     ICHIMOKUIndicator ichimoku_indicator;
+    MAIndicator ma_indicator;
     // TODO Допиши ещё 1 инидикатор
 
     double last_price;
 
-    SymbolData(int bb_p, int macd_s, int macd_l, int macd_sig, int rsi_p, int obv_p, vector<int> ichim_p) :
+    SymbolData(int bb_p, int macd_s, int macd_l, int macd_sig, int rsi_p, int obv_p, int ma_p1, int ma_p2, vector<int> ichim_p) :
             bb(bb_p), macd(macd_s, macd_l, macd_sig), rsi(rsi_p), obv_indicator(obv_p),
-            ichimoku_indicator(ichim_p[0], ichim_p[1], ichim_p[2]){}
+            ichimoku_indicator(ichim_p[0], ichim_p[1], ichim_p[2]), ma_indicator(ma_p1, ma_p2){}
 
 };
 
@@ -50,6 +51,8 @@ struct LoggedData {
     double bb_mid;
     double price;
     double rsi;
+    double ma_20;
+    double ma_50;
     uint64_t timestamp;
 };
 
@@ -121,8 +124,9 @@ int main() {
     auto macd_slow = 26;
     auto macd_signal = 9;
 
-    // EMA
-    auto ema_long = 200;
+    // MA
+    auto ma_short = 20;
+    auto ma_long = 50;
 
     int supertrend_period = 10;
 
@@ -206,10 +210,13 @@ int main() {
                 signals.push_back(st.macd.get_signal());
                 st.rsi.update(data);
                 signals.push_back(st.rsi.get_signal());
-                st.ichimoku_indicator.update(data);
-                signals.push_back(st.ichimoku_indicator.get_signal());
                 st.obv_indicator.update(data);
                 signals.push_back(st.obv_indicator.get_signal());
+                st.ichimoku_indicator.update(data);
+                signals.push_back(st.ichimoku_indicator.get_signal());
+                st.ma_indicator.update(data);
+                signals.push_back(st.ma_indicator.get_signal(data.price));
+
 
 
 
@@ -301,6 +308,8 @@ int main() {
                 signals.push_back(st.ichimoku_indicator.get_signal());
                 st.obv_indicator.update(event);
                 signals.push_back(st.obv_indicator.get_signal());
+                st.ma_indicator.update(event);
+                signals.push_back(st.ma_indicator.get_signal(event.price));
 
 
                 st.last_price = event.price;
@@ -384,6 +393,8 @@ int main() {
                         time_log_data.macd = st.macd.get_macd().macd;
                         time_log_data.macd_s = st.macd.get_macd().signal;
                         time_log_data.rsi = st.rsi.get_value();
+                        time_log_data.ma_20 = st.ma_indicator.get_ma20();
+                        time_log_data.ma_50 = st.ma_indicator.get_ma50();
                         time_log_data.price = event.price;
                         time_log_data.timestamp = event.timestamp;
 
