@@ -3,7 +3,6 @@
 #include "BinanceAPI.h"
 #include "OrderManager.h"
 #include "INDICATORS/BBIndicator.h"
-#include "INDICATORS/EMAIndicator.h"
 #include "INDICATORS/RSIIndicator.h"
 #include "INDICATORS/MACDIndicator.h"
 #include "INDICATORS/MAIndicator.h"
@@ -29,30 +28,40 @@ struct SymbolData {
     OBVIndicator obv_indicator;
     ICHIMOKUIndicator ichimoku_indicator;
     MAIndicator ma_indicator;
-    // TODO Допиши ещё 1 инидикатор
-
     double last_price;
 
-    SymbolData(int bb_p, int macd_s, int macd_l, int macd_sig, int rsi_p, int obv_p, int ma_p1, int ma_p2, vector<int> ichim_p) :
-            bb(bb_p), macd(macd_s, macd_l, macd_sig), rsi(rsi_p), obv_indicator(obv_p),
-            ichimoku_indicator(ichim_p[0], ichim_p[1], ichim_p[2]), ma_indicator(ma_p1, ma_p2){}
-
+    SymbolData(int bb_p, int macd_fast, int macd_slow, int macd_signal,
+               int rsi_p, int obv_p, int ichim_p1, int ichim_p2, int ichim_p3,
+               int ma_p1, int ma_p2)
+            : bb(bb_p), macd(macd_fast, macd_slow, macd_signal), rsi(rsi_p),
+              obv_indicator(obv_p),  ichimoku_indicator(ichim_p1, ichim_p2, ichim_p3), ma_indicator(ma_p1, ma_p2),
+              last_price(0.0) {}
 };
 
 // Логирование данных
 struct LoggedData {
     string symbol;
+
     double macd;
     double macd_s;
-    //double rsi;
-    double ATR;
+
     double bb_up;
     double bb_low;
     double bb_mid;
-    double price;
-    double rsi;
+
+    double ts;
+    double ks;
+    double ssa;
+    double ssb;
+
     double ma_20;
     double ma_50;
+
+    double obv;
+
+    double rsi;
+
+    double price;
     uint64_t timestamp;
 };
 
@@ -62,7 +71,6 @@ mutex indicators_mutex;
 
 
 int main() {
-
     // Считывание API ключей
     const auto api_keys = loadConf("../utils/.env");
     const string API = api_keys.at("API_KEY");
@@ -74,17 +82,15 @@ int main() {
     auto path_to_cacert = "../utils/cacert.pem";
 
 
-
-
     // Инициализация БД-логера
-    const string db_name = "T_B_database";
+    const string db_name = "t_b_database";
     const string db_user = "postgres";
     const string db_host = "localhost";
     const string db_port = "5432";
 
 
-    const string init_db_conn = "dbname="+db_name + " user=" + db_user + " password=" + db_password +
-                                " host="+db_host + " port=" + db_port;
+    const string init_db_conn = "dbname=" + db_name + " user=" + db_user + " password=" + db_password +
+                                " host=" + db_host + " port=" + db_port;
 
     DataBaseLog logger(init_db_conn);
 
@@ -94,7 +100,7 @@ int main() {
 
     // Инициализация менеджеров
     AccountManager acc_manager(binance_api);
-    OrderManager order_manager(binance_api, acc_manager,logger, 1); // 5 ордеров/сек
+    OrderManager order_manager(binance_api, acc_manager, logger, 1); // 5 ордеров/сек
 
 
     acc_manager.start();
@@ -124,11 +130,11 @@ int main() {
     auto macd_slow = 26;
     auto macd_signal = 9;
 
+
     // MA
     auto ma_short = 20;
     auto ma_long = 50;
 
-    int supertrend_period = 10;
 
     // OBV
     int obv_period = 0;
@@ -143,35 +149,37 @@ int main() {
     std::unordered_map<string, AnalysisHandler> indicator_by_symbol;
 
 
-    for (auto& symbol : symbols) {
-        auto data_for_quant = binance_api.http_request("GET", "/api/v3/exchangeInfo", {{"symbol",symbol+"USDT"}}, true);
+    for (auto &symbol: symbols) {
+        auto data_for_quant = binance_api.http_request("GET", "/api/v3/exchangeInfo", {{"symbol", symbol + "USDT"}},
+                                                       true);
 
 
-        for (const auto& mini_data : data_for_quant["symbols"][0]["filters"])
+        for (const auto &mini_data: data_for_quant["symbols"][0]["filters"])
             if (mini_data["filterType"] == "LOT_SIZE") {
                 quantity = std::stod(mini_data["minQty"].get<string>());
                 step_size = std::stod(mini_data["stepSize"].get<string>());
-
-            }
-            else if(mini_data["filterType"] == "NOTIONAL"){
+            } else if (mini_data["filterType"] == "NOTIONAL") {
                 min_notional = std::stod(mini_data["minNotional"].get<string>());
             }
 
 
         symbol_data.emplace(
-            std::piecewise_construct,
-            std::forward_as_tuple(symbol),
-            std::forward_as_tuple(
+        std::piecewise_construct,
+        std::forward_as_tuple(symbol),
+        std::forward_as_tuple(
             bb_period,
-            {macd_fast,
+            macd_fast,
             macd_slow,
-            macd_signal},
+            macd_signal,
             rsi_period,
             obv_period,
-            {9, 26, 52}
-            )
+            9,
+            26,
+            52,
+            ma_short,
+            ma_long)
         );
-        indicator_by_symbol.emplace(
+            indicator_by_symbol.emplace(
             std::piecewise_construct,
             std::forward_as_tuple(symbol),
             std::forward_as_tuple(quantity, step_size, min_notional)
@@ -182,17 +190,20 @@ int main() {
 
 
     try {
-        for (const auto& coin : symbols) {
-            cout << "Loading historical data from Binance... for "<< coin << endl;
+        for (const auto &coin: symbols) {
+            vector<double> hist;
+            cout << "Loading historical data from Binance... for " << coin << endl;
 
 
-            json klines =  binance_api.get_historical_klines(coin, "15m", 200);
+            json klines = binance_api.get_historical_klines(coin, "15m", 200);
 
-            auto& st = symbol_data.at(coin);
-            auto& ind = indicator_by_symbol.at(coin);
+            auto &st = symbol_data.at(coin);
+            auto &ind = indicator_by_symbol.at(coin);
 
-            // Заполняем стратегию данными из JSON
-            for (const auto& candle : klines) {
+            int idx = 0;
+
+            // Заполняем стратегию данными из Binance из формата JSON
+            for (const auto &candle: klines) {
                 Candle data{
                     candle["timestamp"].get<uint64_t>(),
                     candle["symbol"].get<string>(),
@@ -200,40 +211,39 @@ int main() {
                     candle["high"].get<double>(),
                     candle["low"].get<double>(),
                     candle["volume"].get<double>()
-            };
+                };
                 logger.log_data(data, acc_manager.get_balance("USDT"), acc_manager.get_balance(coin));
+                signals = {};
 
-                historical_data.push_back(data.price);
                 st.bb.update(data);
                 signals.push_back(st.bb.get_signal());
+
                 st.macd.update(data);
                 signals.push_back(st.macd.get_signal());
+
                 st.rsi.update(data);
                 signals.push_back(st.rsi.get_signal());
+
                 st.obv_indicator.update(data);
                 signals.push_back(st.obv_indicator.get_signal());
+
                 st.ichimoku_indicator.update(data);
                 signals.push_back(st.ichimoku_indicator.get_signal());
+
                 st.ma_indicator.update(data);
                 signals.push_back(st.ma_indicator.get_signal(data.price));
 
+                hist.push_back(data.price);
 
+                ind.set_signals(signals, idx);
 
-
-
-
-
-
-
-
-                // ind.set_params(st.rsi.get_value(), st.bb.get_bands().bb_up,
-                //                   st.bb.get_bands().bb_low, st.bb.get_bands().bb_mid,
-                //                   st.macd.get_macd().macd, st.macd.get_macd().signal,
-                //                   st.ema200.get_value(), data.price);
+                idx++;
             }
 
-            cout << "Successfully loaded " << klines.size() << " historical candles from Binance." << "\n\n";
+            ind.set_historical(hist);
+            ind.optimize_weights();
 
+            cout << "Successfully loaded " << klines.size() << " historical candles from Binance." << "\n\n";
             // Получаем последнюю цену для start_price
             if (!klines.empty()) {
                 st.last_price = klines.back()["price"].get<double>();
@@ -243,7 +253,6 @@ int main() {
         cerr << "Error loading historical data: " << e.what() << endl;
         return 1;
     }
-
 
 
     // Инициализация WebSocket
@@ -265,22 +274,23 @@ int main() {
     ws->on_message([&](const json &data) {
         if (!running) return;
 
-        if (data.contains("data") && data["data"].contains("e") && data["data"]["e"] == "kline" && data["data"]["k"]["x"] == true) {
+        if (data.contains("data") && data["data"].contains("e") && data["data"]["e"] == "kline" && data["data"]["k"][
+                "x"] == true) {
             try {
-
+                signals = {};
                 string full = data["data"]["s"].get<string>();
-                string sym  = full.substr(0, full.size()-4);
+                string sym = full.substr(0, full.size() - 4);
 
                 auto it = symbol_data.find(sym);
-                auto& ind = indicator_by_symbol.at(sym);
+                auto &ind = indicator_by_symbol.at(sym);
 
                 Candle event{
-                        data["data"]["E"].get<uint64_t>(),              // timestamp
-                        data["data"]["s"].get<string>(),                // symbol
-                        stod(data["data"]["k"]["c"].get<string>()),  // close price
-                        stod(data["data"]["k"]["h"].get<string>()),  // high
-                        stod(data["data"]["k"]["l"].get<string>()),  // low
-                        stod(data["data"]["k"]["v"].get<string>())   // volume
+                    data["data"]["E"].get<uint64_t>(), // timestamp
+                    data["data"]["s"].get<string>(), // symbol
+                    stod(data["data"]["k"]["c"].get<string>()), // close price
+                    stod(data["data"]["k"]["h"].get<string>()), // high
+                    stod(data["data"]["k"]["l"].get<string>()), // low
+                    stod(data["data"]["k"]["v"].get<string>()) // volume
                 };
 
 
@@ -289,40 +299,39 @@ int main() {
 
                 std::tm tm_info{};
                 if (localtime_s(&tm_info, &tt) != 0) {
-                   cerr << "Error convert time, Status" << endl;
+                    cerr << "Error convert time, Status" << endl;
                 }
-
 
 
                 logger.log_data(event, acc_manager.get_balance("USDT"), acc_manager.get_balance(sym));
 
                 auto &st = it->second;
-                historical_data.push_back(event.price);
+
                 st.bb.update(event);
                 signals.push_back(st.bb.get_signal());
+
                 st.macd.update(event);
                 signals.push_back(st.macd.get_signal());
+
                 st.rsi.update(event);
                 signals.push_back(st.rsi.get_signal());
+
                 st.ichimoku_indicator.update(event);
                 signals.push_back(st.ichimoku_indicator.get_signal());
+
                 st.obv_indicator.update(event);
                 signals.push_back(st.obv_indicator.get_signal());
+
                 st.ma_indicator.update(event);
                 signals.push_back(st.ma_indicator.get_signal(event.price));
 
 
                 st.last_price = event.price;
 
-                // ind.set_params(st.rsi.get_value(), st.bb.get_bands().bb_up,
-                //                  st.bb.get_bands().bb_low, st.bb.get_bands().bb_mid,
-                //                  st.macd.get_macd().macd, st.macd.get_macd().signal,
-                //                  st.ema200.get_value(), event.price);
 
-                auto [has_signal, signal_type] = ind.check_signal();
+                auto [has_signal, signal_type] = ind.check_signal(signals);
 
                 if (has_signal) {
-
                     double risk_percent = 3.0;
 
                     double usdt_balance = acc_manager.get_balance("USDT");
@@ -335,8 +344,7 @@ int main() {
                         action = "BUY";
                         quantity = (usdt_balance * risk_percent / 100) / price;
                         sum_quant[sym] += quantity;
-                    }
-                    else if (signal_type.find("SELL") != string::npos) {
+                    } else if (signal_type.find("SELL") != string::npos) {
                         action = "SELL";
                         quantity = sum_quant[sym];
                         sum_quant[sym] = 0;
@@ -351,17 +359,16 @@ int main() {
 
                     if (action == "BUY") {
                         indicator_by_symbol.at(sym).open_position(event.price, quantity);
-                    }
-                    else if (action == "SELL") {
+                    } else if (action == "SELL") {
                         indicator_by_symbol.at(sym).close_position(event.price);
                     }
 
 
-                    quantity = ceil(quantity/step_size) * step_size;
+                    quantity = ceil(quantity / step_size) * step_size;
 
-                    cout <<"Quantity: "<< quantity << " for symbol " << sym << " | Price: " << event.price  << "\n\n";
+                    cout << "Quantity: " << quantity << " for symbol " << sym << " | Price: " << event.price << "\n\n";
 
-                    order_manager.add_order(action, sym+"USDT", event.price, quantity, signal_type.substr(0,10));
+                    order_manager.add_order(action, sym + "USDT", event.price, quantity, signal_type.substr(0, 10));
                     cout << "Current Action: " << action << "\n\n";
                 }
                 //
@@ -379,32 +386,37 @@ int main() {
                 // // // cout <<  indicator_by_symbol.at(sym).get_total_profit() << "  USDT "<< indicator_by_symbol.at(sym).get_total_profit_percent() << "% \n\n";
 
 
-
                 {
-                        lock_guard<std::mutex> lock(indicators_mutex);
+                    lock_guard<std::mutex> lock(indicators_mutex);
 
-                        LoggedData time_log_data;
+                    LoggedData time_log_data;
 
-                        time_log_data.symbol = sym;
-                        //time_log_data.rsi = st.rsi.get_value();
-                        time_log_data.bb_up = st.bb.get_bands().bb_up;
-                        time_log_data.bb_mid = st.bb.get_bands().bb_mid;
-                        time_log_data.bb_low = st.bb.get_bands().bb_low;
-                        time_log_data.macd = st.macd.get_macd().macd;
-                        time_log_data.macd_s = st.macd.get_macd().signal;
-                        time_log_data.rsi = st.rsi.get_value();
-                        time_log_data.ma_20 = st.ma_indicator.get_ma20();
-                        time_log_data.ma_50 = st.ma_indicator.get_ma50();
-                        time_log_data.price = event.price;
-                        time_log_data.timestamp = event.timestamp;
+                    time_log_data.symbol = sym;
 
-                        last_indicators[sym] = time_log_data;
+                    time_log_data.macd = st.macd.get_macd().macd;
+                    time_log_data.macd_s = st.macd.get_macd().signal;
+
+                    time_log_data.bb_up = st.bb.get_bands().bb_up;
+                    time_log_data.bb_mid = st.bb.get_bands().bb_mid;
+                    time_log_data.bb_low = st.bb.get_bands().bb_low;
+
+                    time_log_data.ts = st.ichimoku_indicator.getTS();
+                    time_log_data.ks = st.ichimoku_indicator.getKS();
+                    time_log_data.ssa = st.ichimoku_indicator.getSSA();
+                    time_log_data.ssb = st.ichimoku_indicator.getSSB();
+
+                    time_log_data.ma_20 = st.ma_indicator.get_ma20();
+                    time_log_data.ma_50 = st.ma_indicator.get_ma50();
+
+                    time_log_data.obv = st.obv_indicator.get_value();
+
+                    time_log_data.rsi = st.rsi.get_value();
+
+                    time_log_data.price = event.price;
+                    time_log_data.timestamp = event.timestamp;
+
+                    last_indicators[sym] = time_log_data;
                 }
-
-
-
-
-
             } catch (const exception &e) {
                 cerr << "WS data error: " << e.what() << endl;
             }
@@ -418,10 +430,10 @@ int main() {
 
     for (int i = 0; i < symbols.size(); ++i) {
         if (i) {
-            streams+='/';
+            streams += '/';
         }
         string s = symbols[i];
-        for (auto& c : s) {
+        for (auto &c: s) {
             c = tolower(c);
         }
         streams += s + "usdt@kline_15m"; // Параметры свечи
@@ -444,7 +456,6 @@ int main() {
             }
         }
     });
-
 
 
     // Поток мониторинга и создания ордеров
@@ -475,38 +486,46 @@ int main() {
     // Поток для логирования данных (индикаторы, исторические), каждые 30с
     thread db_log_data_thread([&]() {
         while (running) {
-           std::this_thread::sleep_for(30s);
+            std::this_thread::sleep_for(300s);
 
 
+            try {
+                unordered_map<string, LoggedData> snapshot; {
+                    lock_guard<mutex> lock(indicators_mutex);
+                    snapshot = last_indicators;
+                }
+                for (const auto &[symbol, data]: snapshot) {
+                    logger.log_data(
+                        symbol,
+                        data.macd,
+                        data.macd_s,
 
-           try {
-               unordered_map<string, LoggedData> snapshot;
-               {
-                lock_guard<mutex> lock(indicators_mutex);
-                snapshot = last_indicators;
-               }
-               for (const auto& [symbol, data] : snapshot) {
-                   logger.log_data(
-                       symbol,
-                       data.macd,
-                       data.macd_s,
-                       data.rsi,
-                       data.ATR,
-                       data.bb_up,
-                       data.bb_low,
-                       data.bb_mid,
-                       data.price,
-                       data.timestamp
-                   );
-           }
+                        data.bb_up,
+                        data.bb_low,
+                        data.bb_mid,
 
-               cout << "\n\n Data was written into DB \n\n";
-           } catch (const exception& e) {
-               cerr << "DB write error: " << e.what() << endl;
-           }
+                        data.ts,
+                        data.ks,
+                        data.ssa,
+                        data.ssb,
+
+                        data.ma_20,
+                        data.ma_50,
+
+                        data.obv,
+
+                        data.rsi,
+
+                        data.price,
+                        data.timestamp
+                    );
+                }
+
+                cout << "\n\n Data was written into DB \n\n";
+            } catch (const exception &e) {
+                cerr << "DB write error: " << e.what() << endl;
+            }
         }
-
-
     });
 
     while (running) {
@@ -522,5 +541,3 @@ int main() {
 
     return 0;
 }
-
-

@@ -5,29 +5,24 @@
 #include "AnalysisHandler.h"
 
 AnalysisHandler::AnalysisHandler(const double& quant, const double& step_size, const double& notional) :
-                                quantity(quant), step_size(step_size), min_notional(notional){}
+                                quantity(quant), step_size(step_size), min_notional(notional), matrix_signals(200, vector<int>(6, 0)){}
 
 /*void AnalysisHandler::set_params(const double& rsi, const double& bb_up, const double& bb_low,
                     const double& bb_mean, const double& macd, const double& macd_signal, const double& ema,
                     const double& price){*/
-void AnalysisHandler::set_params(int rsi_signal, int macd_signal, int bb_signal, int obv_signal, int ichimoku_signal) {
-     // rsi = rsi_signal;
-     // macd = macd_signal;
-     // bb = bb_signal;
-     // obv = obv_signal;
-     // ichimoku = ichimoku_signal;
-     signals = {rsi_signal, macd_signal, bb_signal, obv_signal, ichimoku_signal};
+void AnalysisHandler::set_signals(vector<int>& signals, int& idx) {
+    matrix_signals[idx] = signals;
 }
 
 
 
-std::pair<bool, std::string> AnalysisHandler::check_signal() {
+std::pair<bool, std::string> AnalysisHandler::check_signal(vector<int> signals) {
 
     if (is_cooldown()) {
         return {false, "COOLDOWN"};
     }
 
-    std::pair<bool, std::string> strategy_1 = check_combined_signal();
+    std::pair<bool, std::string> strategy_1 = check_combined_signal(signals);
 
     if (strategy_1.first) {
         last_signal_time = std::chrono::system_clock::now();
@@ -39,10 +34,10 @@ std::pair<bool, std::string> AnalysisHandler::check_signal() {
 }
 
 
-std::pair<bool, std::string> AnalysisHandler::check_combined_signal() {
+std::pair<bool, std::string> AnalysisHandler::check_combined_signal(vector<int>& infer_signals) {
     int combined_signal = 0;
-    for (size_t i = 0; i < signals.size(); ++i) {
-        combined_signal += weights[i] * signals[i];
+    for (size_t i = 0; i < infer_signals.size(); ++i) {
+        combined_signal += best_weights[i] * infer_signals[i];
     }
 
     if (combined_signal > 0) return {true, "BUY_SIGNAL"};
@@ -85,7 +80,7 @@ double AnalysisHandler::backtest(const std::vector<int>& weights) {
     for (int i = 1; i < historical_data.size(); ++i) {
         int combined = 0;
         for (int j = 0; j < weights.size(); ++j)
-            combined += weights[j] * signals[j];
+            combined += weights[j] * matrix_signals[i][j];
 
         // Симуляция сделок
         if (combined > 0) {
@@ -149,4 +144,8 @@ double AnalysisHandler::get_step_size() const {
 
 double AnalysisHandler::get_min_notional() const{
     return min_notional;
+}
+
+void AnalysisHandler::set_historical(vector<double>& hist) {
+    historical_data = hist;
 }

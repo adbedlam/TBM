@@ -7,6 +7,7 @@
 
 #include "common.hpp"
 
+
 using std::vector;
 
 class AnalysisHandler {
@@ -34,23 +35,30 @@ private:
     int obv;
     int ichimoku;
 
-    vector<int> signals;
-    vector<int> weights;
+
+
+    vector<vector<int>> matrix_signals;
+    vector<int> weights();
 
     std::chrono::time_point<std::chrono::system_clock> last_signal_time;
+
+    bool is_cooldown() const;
+
+    double backtest(const std::vector<int>& weights);
+
 
 public:
     explicit AnalysisHandler(const double& quant, const double& step_size, const double& notional);
 
 
-    void set_params(int rsi_signal, int macd_signal, int bb_signal, int obv_signal, int ichimoku_signal);
+    void set_signals(vector<int>& signals, int& idx);
 
-    std::pair<bool, std::string> check_signal();
+    std::pair<bool, std::string> check_signal(vector<int> signals);
 
 
-    std::pair<bool, std::string> check_combined_signal();
+    std::pair<bool, std::string> check_combined_signal(vector<int>& infer_signals);
 
-    bool is_cooldown() const;
+
 
     void open_position(double price, double quantity);
     void close_position(double exit_price);
@@ -66,7 +74,8 @@ public:
 
     void optimize_weights();
 
-    double backtest(const std::vector<int>& weights);
+    void set_historical(vector<double>& hist);
+
 
 };
 

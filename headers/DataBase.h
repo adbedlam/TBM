@@ -17,21 +17,35 @@ private:
     void create_tables_if_missing(pqxx::connection& c) {
         pqxx::work txn(c);
 
-        txn.exec("DO $$BEGIN IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'T_B_database') THEN CREATE DATABASE T_B_database;END IF;END $$");
+        txn.exec("DO $$BEGIN IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 't_b_database') THEN CREATE DATABASE T_B_database;END IF;END $$");
 
     
         txn.exec(
             "CREATE TABLE IF NOT EXISTS indicators ("
             "id SERIAL PRIMARY KEY,"
             "symbols VARCHAR(10) NOT NULL,"
+
             "macd DOUBLE PRECISION NOT NULL,"
             "signal DOUBLE PRECISION NOT NULL,"
-            "rsi DOUBLE PRECISION NOT NULL,"
-            "ATR DOUBLE PRECISION NOT NULL,"
+
             "upper_band DOUBLE PRECISION NOT NULL,"
             "lower_band DOUBLE PRECISION NOT NULL,"
             "middle_band DOUBLE PRECISION NOT NULL,"
+
+            "ts DOUBLE PRECISION NOT NULL,"
+            "ks DOUBLE PRECISION NOT NULL,"
+            "ssa DOUBLE PRECISION NOT NULL,"
+            "ssb DOUBLE PRECISION NOT NULL,"
+
+            "ma20 DOUBLE PRECISION NOT NULL,"
+            "ma50 DOUBLE PRECISION NOT NULL,"
+
+            "obv DOUBLE PRECISION NOT NULL,"
+
+            "rsi DOUBLE PRECISION NOT NULL,"
+
             "price DOUBLE PRECISION NOT NULL,"
+
             "timestamp BIGINT NOT NULL)"
         );
 
@@ -76,8 +90,8 @@ private:
 
             conn.prepare(
                 "insert_indicators",
-                "INSERT INTO indicators (symbols, macd, signal, rsi, ATR, upper_band, lower_band, middle_band, price, timestamp) "
-                "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"
+                "INSERT INTO indicators (symbols, macd, signal, upper_band, lower_band, middle_band, ts, ks, ssa, ssb, ma20, ma50, obv, rsi, price, timestamp) "
+                "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)"
             );
 
             conn.prepare(
@@ -115,9 +129,11 @@ public:
 
     void log_data(const Candle &data, const double& usdt_balance, const double&  coin_balance);
 
-    void log_data(const string& symbols, const double &macd, const double &signal, const double &rsi, const double &ATR,
-                  const double &Bbands_u, const double &Bbands_l,
-                  const double &Bbands_m, const double &price, const uint64_t &time);
+    void log_data(const string& symbols, const double &macd, const double &signal,
+                  const double &Bbands_u, const double &Bbands_l,const double &Bbands_m,
+                  const double &ts, const double &ks, const double &ssa, const double &ssb,
+                  const double &ma20, const double &ma50, const double &obv,
+                  const double &rsi, const double &price, const uint64_t &time);
 
     void log_data(uint64_t &timestamp, string &action, string &symbol, double &quant, double &price, double &commision, string& strategy);
 };
